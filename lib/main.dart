@@ -7,7 +7,17 @@ import 'pages/splash_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: const FirebaseOptions(
+      apiKey: "AIzaSyCLDPaH9DU09zqTyypCAsZfnJDuyfLIYMk",
+      authDomain: "chatku-3e521.firebaseapp.com",
+      projectId: "chatku-3e521",
+      storageBucket: "chatku-3e521.firebasestorage.app",
+      messagingSenderId: "988535490987",
+      appId: "1:988535490987:web:2bdd4377cfc83dc02e6aee",
+      measurementId: "G-XHNQSTQQT7",
+    ),
+  );
   runApp(const ChatKuApp());
 }
 
