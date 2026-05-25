@@ -1,12 +1,16 @@
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/call_service.dart';
 import '../services/chat_service.dart';
 import '../services/contact_service.dart';
 import '../widgets/user_tile.dart';
 import 'chat_page.dart';
 import 'friend_requests_page.dart';
+import 'incoming_call_page.dart';
 import 'profile_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -19,9 +23,46 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  StreamSubscription<QuerySnapshot>? _callSub;
+  String? _handlingCallId;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _listenForIncomingCalls();
+    });
+  }
+
+  void _listenForIncomingCalls() {
+    final currentUid = context.read<AuthService>().currentUid;
+    if (currentUid == null) return;
+
+    _callSub = CallService.incomingCallStream(currentUid).listen((snap) {
+      if (snap.docs.isEmpty || !mounted) return;
+      final doc = snap.docs.first;
+      if (doc.id == _handlingCallId) return;
+      _handlingCallId = doc.id;
+      final data = doc.data() as Map<String, dynamic>;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => IncomingCallPage(
+            callId: doc.id,
+            callerName: data['callerName'] ?? '',
+            callerPhotoUrl: data['callerPhotoUrl'] ?? '',
+            isVideo: data['type'] == 'video',
+            currentUid: currentUid,
+          ),
+        ),
+      ).then((_) => _handlingCallId = null);
+    });
+  }
 
   @override
   void dispose() {
+    _callSub?.cancel();
     _searchController.dispose();
     super.dispose();
   }
