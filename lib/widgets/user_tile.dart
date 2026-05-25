@@ -8,12 +8,14 @@ class UserTile extends StatelessWidget {
   final UserModel user;
   final String roomId;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   const UserTile({
     super.key,
     required this.user,
     required this.roomId,
     required this.onTap,
+    this.onLongPress,
   });
 
   String _formatLastSeen(Timestamp? ts) {
@@ -75,6 +77,7 @@ class UserTile extends StatelessWidget {
       subtitle: _buildSubtitle(),
       trailing: _buildTrailing(),
       onTap: onTap,
+      onLongPress: onLongPress,
     );
   }
 
