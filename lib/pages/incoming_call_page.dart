@@ -65,15 +65,9 @@ class _IncomingCallPageState extends State<IncomingCallPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: const Color(0xFF111111),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF2D2B55), Color(0xFF1A1A2E)],
-          ),
-        ),
+        color: const Color(0xFF111111),
         child: SafeArea(
           child: Column(
             children: [
@@ -101,25 +95,28 @@ class _IncomingCallPageState extends State<IncomingCallPage>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: const Color(0xFF6C63FF).withValues(
-                            alpha: 0.3 + _pulseController.value * 0.3,
+                          color: Colors.white.withValues(
+                            alpha:
+                                0.15 + _pulseController.value * 0.25,
                           ),
                           width: 3,
                         ),
                       ),
                       child: CircleAvatar(
                         radius: 64,
-                        backgroundColor: const Color(0xFF3D3B6E),
-                        backgroundImage: widget.callerPhotoUrl.isNotEmpty
-                            ? NetworkImage(widget.callerPhotoUrl)
-                            : null,
+                        backgroundColor: const Color(0xFF333333),
+                        backgroundImage:
+                            widget.callerPhotoUrl.isNotEmpty
+                                ? NetworkImage(widget.callerPhotoUrl)
+                                : null,
                         child: widget.callerPhotoUrl.isEmpty
                             ? Text(
                                 widget.callerName.isNotEmpty
-                                    ? widget.callerName[0].toUpperCase()
+                                    ? widget.callerName[0]
+                                        .toUpperCase()
                                     : '?',
                                 style: const TextStyle(
-                                  color: Color(0xFF6C63FF),
+                                  color: Colors.white,
                                   fontSize: 44,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -142,7 +139,7 @@ class _IncomingCallPageState extends State<IncomingCallPage>
               ),
               const SizedBox(height: 8),
               Text(
-                widget.isVideo ? '📹 Video Call' : '📞 Voice Call',
+                widget.isVideo ? 'Video Call' : 'Voice Call',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.6),
                   fontSize: 15,
@@ -164,7 +161,7 @@ class _IncomingCallPageState extends State<IncomingCallPage>
                             width: 68,
                             height: 68,
                             decoration: const BoxDecoration(
-                              color: Colors.red,
+                              color: Color(0xFFFF3B30),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -178,7 +175,8 @@ class _IncomingCallPageState extends State<IncomingCallPage>
                         Text(
                           'Tolak',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
+                            color:
+                                Colors.white.withValues(alpha: 0.8),
                             fontSize: 14,
                           ),
                         ),
@@ -193,7 +191,7 @@ class _IncomingCallPageState extends State<IncomingCallPage>
                             width: 68,
                             height: 68,
                             decoration: const BoxDecoration(
-                              color: Color(0xFF48BB78),
+                              color: Color(0xFF34C759),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -209,7 +207,8 @@ class _IncomingCallPageState extends State<IncomingCallPage>
                         Text(
                           'Terima',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
+                            color:
+                                Colors.white.withValues(alpha: 0.8),
                             fontSize: 14,
                           ),
                         ),

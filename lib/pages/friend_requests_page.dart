@@ -5,6 +5,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/contact_service.dart';
+import '../utils/avatar_helper.dart';
 
 class FriendRequestsPage extends StatelessWidget {
   const FriendRequestsPage({super.key});
@@ -22,23 +23,23 @@ class FriendRequestsPage extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF6C63FF)),
+              child: CircularProgressIndicator(color: Color(0xFF111111)),
             );
           }
 
           final requests = snapshot.data ?? [];
 
           if (requests.isEmpty) {
-            return Center(
+            return const Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.people_outline_rounded,
-                      size: 64, color: Colors.grey[300]),
-                  const SizedBox(height: 12),
+                      size: 64, color: Color(0xFFE5E5E5)),
+                  SizedBox(height: 12),
                   Text(
                     'Tidak ada permintaan pertemanan',
-                    style: TextStyle(color: Colors.grey[400], fontSize: 15),
+                    style: TextStyle(color: Color(0xFF999999), fontSize: 15),
                   ),
                 ],
               ),
@@ -49,9 +50,8 @@ class FriendRequestsPage extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: requests.length,
             separatorBuilder: (_, __) => const Divider(
-              height: 1,
               indent: 80,
-              endIndent: 16,
+              endIndent: 20,
             ),
             itemBuilder: (context, i) {
               final req = requests[i];
@@ -60,10 +60,11 @@ class FriendRequestsPage extends StatelessWidget {
 
               return ListTile(
                 contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
                 leading: CircleAvatar(
                   radius: 26,
-                  backgroundColor: const Color(0xFFEEECFF),
+                  backgroundColor:
+                      AvatarHelper.backgroundColor(user.username),
                   backgroundImage: user.photoUrl.isNotEmpty
                       ? NetworkImage(user.photoUrl)
                       : null,
@@ -72,8 +73,8 @@ class FriendRequestsPage extends StatelessWidget {
                           user.username.isNotEmpty
                               ? user.username[0].toUpperCase()
                               : '?',
-                          style: const TextStyle(
-                            color: Color(0xFF6C63FF),
+                          style: TextStyle(
+                            color: AvatarHelper.textColor(user.username),
                             fontWeight: FontWeight.w700,
                             fontSize: 18,
                           ),
@@ -85,14 +86,15 @@ class FriendRequestsPage extends StatelessWidget {
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
-                    color: Color(0xFF1A1A2E),
+                    color: Color(0xFF111111),
                   ),
                 ),
                 subtitle: Text(
                   ts != null
                       ? timeago.format(ts.toDate(), locale: 'id')
                       : user.email,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+                  style: const TextStyle(
+                      fontSize: 12, color: Color(0xFF999999)),
                 ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -100,7 +102,7 @@ class FriendRequestsPage extends StatelessWidget {
                     // Reject
                     IconButton(
                       icon: const Icon(Icons.close_rounded),
-                      color: Colors.red[400],
+                      color: const Color(0xFFFF3B30),
                       tooltip: 'Tolak',
                       onPressed: () async {
                         await ContactService.rejectFriendRequest(req['id']);
@@ -120,9 +122,12 @@ class FriendRequestsPage extends StatelessWidget {
                       icon: const Icon(Icons.check_rounded, size: 18),
                       label: const Text('Terima'),
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF6C63FF),
+                        backgroundColor: const Color(0xFF111111),
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         minimumSize: const Size(0, 36),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
+                        ),
                         textStyle: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -138,7 +143,7 @@ class FriendRequestsPage extends StatelessWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                  '${user.username} ditambahkan ke kontak!'),
+                                  '${user.username} ditambahkan ke kontak'),
                               behavior: SnackBarBehavior.floating,
                             ),
                           );

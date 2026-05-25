@@ -138,7 +138,7 @@ class _CallPageState extends State<CallPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: const Color(0xFF111111),
       body: widget.isVideo ? _buildVideoCall() : _buildAudioCall(),
     );
   }
@@ -146,13 +146,7 @@ class _CallPageState extends State<CallPage> {
   // ── Audio Call UI ─────────────────────────────────────────────────────
   Widget _buildAudioCall() {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF2D2B55), Color(0xFF1A1A2E)],
-        ),
-      ),
+      color: const Color(0xFF111111),
       child: SafeArea(
         child: Column(
           children: [
@@ -160,7 +154,7 @@ class _CallPageState extends State<CallPage> {
             // Avatar
             CircleAvatar(
               radius: 60,
-              backgroundColor: const Color(0xFF3D3B6E),
+              backgroundColor: const Color(0xFF333333),
               backgroundImage: widget.targetPhotoUrl.isNotEmpty
                   ? NetworkImage(widget.targetPhotoUrl)
                   : null,
@@ -170,7 +164,7 @@ class _CallPageState extends State<CallPage> {
                           ? widget.targetName[0].toUpperCase()
                           : '?',
                       style: const TextStyle(
-                        color: Color(0xFF6C63FF),
+                        color: Colors.white,
                         fontSize: 40,
                         fontWeight: FontWeight.w700,
                       ),
@@ -213,7 +207,9 @@ class _CallPageState extends State<CallPage> {
         _ControlButton(
           icon: _isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
           label: _isMuted ? 'Unmute' : 'Mute',
-          color: _isMuted ? Colors.red[400]! : Colors.white24,
+          color: _isMuted
+              ? const Color(0xFFFF3B30)
+              : Colors.white.withValues(alpha: 0.15),
           onTap: () {
             setState(() => _isMuted = !_isMuted);
             _callService.toggleMute(_isMuted);
@@ -222,14 +218,14 @@ class _CallPageState extends State<CallPage> {
         _ControlButton(
           icon: Icons.call_end_rounded,
           label: 'Akhiri',
-          color: Colors.red,
+          color: const Color(0xFFFF3B30),
           size: 68,
           onTap: _endCall,
         ),
         _ControlButton(
           icon: Icons.volume_up_rounded,
           label: 'Speaker',
-          color: Colors.white24,
+          color: Colors.white.withValues(alpha: 0.15),
           onTap: () {},
         ),
       ],
@@ -248,20 +244,14 @@ class _CallPageState extends State<CallPage> {
                   objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                 )
               : Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Color(0xFF2D2B55), Color(0xFF1A1A2E)],
-                    ),
-                  ),
+                  color: const Color(0xFF111111),
                   child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         CircleAvatar(
                           radius: 50,
-                          backgroundColor: const Color(0xFF3D3B6E),
+                          backgroundColor: const Color(0xFF333333),
                           backgroundImage:
                               widget.targetPhotoUrl.isNotEmpty
                                   ? NetworkImage(widget.targetPhotoUrl)
@@ -272,7 +262,7 @@ class _CallPageState extends State<CallPage> {
                                       ? widget.targetName[0].toUpperCase()
                                       : '?',
                                   style: const TextStyle(
-                                    color: Color(0xFF6C63FF),
+                                    color: Colors.white,
                                     fontSize: 36,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -366,7 +356,9 @@ class _CallPageState extends State<CallPage> {
                         ? Icons.mic_off_rounded
                         : Icons.mic_rounded,
                     label: 'Mute',
-                    color: _isMuted ? Colors.red[400]! : Colors.white24,
+                    color: _isMuted
+                        ? const Color(0xFFFF3B30)
+                        : Colors.white.withValues(alpha: 0.15),
                     onTap: () {
                       setState(() => _isMuted = !_isMuted);
                       _callService.toggleMute(_isMuted);
@@ -377,7 +369,9 @@ class _CallPageState extends State<CallPage> {
                         ? Icons.videocam_off_rounded
                         : Icons.videocam_rounded,
                     label: 'Kamera',
-                    color: _isCameraOff ? Colors.red[400]! : Colors.white24,
+                    color: _isCameraOff
+                        ? const Color(0xFFFF3B30)
+                        : Colors.white.withValues(alpha: 0.15),
                     onTap: () {
                       setState(() => _isCameraOff = !_isCameraOff);
                       _callService.toggleCamera(_isCameraOff);
@@ -386,7 +380,7 @@ class _CallPageState extends State<CallPage> {
                   _ControlButton(
                     icon: Icons.cameraswitch_rounded,
                     label: 'Flip',
-                    color: Colors.white24,
+                    color: Colors.white.withValues(alpha: 0.15),
                     onTap: () {
                       setState(() => _isFrontCamera = !_isFrontCamera);
                       _callService.switchCamera();
@@ -395,7 +389,7 @@ class _CallPageState extends State<CallPage> {
                   _ControlButton(
                     icon: Icons.call_end_rounded,
                     label: 'Akhiri',
-                    color: Colors.red,
+                    color: const Color(0xFFFF3B30),
                     size: 62,
                     onTap: _endCall,
                   ),

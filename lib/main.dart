@@ -37,61 +37,65 @@ class ChatKuApp extends StatelessWidget {
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF6C63FF),
+            seedColor: const Color(0xFF111111),
             brightness: Brightness.light,
           ),
-          scaffoldBackgroundColor: const Color(0xFFF8F9FE),
+          scaffoldBackgroundColor: Colors.white,
           appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFFF8F9FE),
+            backgroundColor: Colors.white,
             elevation: 0,
             scrolledUnderElevation: 0,
             titleTextStyle: TextStyle(
-              color: Color(0xFF1A1A2E),
-              fontSize: 18,
+              color: Color(0xFF111111),
+              fontSize: 20,
               fontWeight: FontWeight.w700,
               letterSpacing: -0.3,
             ),
-            iconTheme: IconThemeData(color: Color(0xFF1A1A2E)),
+            iconTheme: IconThemeData(color: Color(0xFF111111)),
           ),
           inputDecorationTheme: InputDecorationTheme(
             filled: true,
-            fillColor: Colors.white,
+            fillColor: const Color(0xFFF5F5F5),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFFE8E8F0)),
+              borderRadius: BorderRadius.circular(28),
+              borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFFE8E8F0)),
+              borderRadius: BorderRadius.circular(28),
+              borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: Color(0xFF6C63FF), width: 1.5),
+              borderRadius: BorderRadius.circular(28),
+              borderSide: BorderSide.none,
             ),
             contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           ),
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C63FF),
+              backgroundColor: const Color(0xFF111111),
               foregroundColor: Colors.white,
-              minimumSize: const Size(double.infinity, 52),
+              minimumSize: const Size(double.infinity, 54),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(28),
               ),
               elevation: 0,
               textStyle: const TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
                 letterSpacing: 0.2,
               ),
             ),
           ),
           textButtonTheme: TextButtonThemeData(
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF6C63FF),
+              foregroundColor: const Color(0xFF111111),
             ),
+          ),
+          dividerTheme: const DividerThemeData(
+            color: Color(0xFFF0F0F0),
+            thickness: 0.5,
+            space: 0,
           ),
         ),
         home: const SplashPage(),
