@@ -24,7 +24,8 @@ dependencies:
   uuid: ^4.3.3
   timeago: ^3.6.1
   url_launcher: ^6.2.5
-  jitsi_meet_flutter_sdk: ^10.0.0
+  jitsi_meet_flutter_sdk: ^10.0.0  # ← tambahkan 2 spasi di depan
+  flutter_webrtc: ^0.12.4
 
 dev_dependencies:
   flutter_test:

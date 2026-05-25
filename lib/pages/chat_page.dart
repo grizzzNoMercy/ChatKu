@@ -5,10 +5,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../models/message_model.dart';
+import '../services/auth_service.dart';
 import '../services/chat_service.dart';
 import '../services/presence_service.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/presence_widget.dart';
+import 'call_page.dart';
 
 class ChatPage extends StatefulWidget {
   final UserModel targetUser;
@@ -158,6 +160,28 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  Future<void> _startCall(bool isVideo) async {
+    final authService = context.read<AuthService>();
+    final currentUser = await authService.getCurrentUserData();
+    if (!mounted || currentUser == null) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CallPage(
+          currentUid: widget.currentUid,
+          targetName: widget.targetUser.username,
+          targetPhotoUrl: widget.targetUser.photoUrl,
+          isVideo: isVideo,
+          isCaller: true,
+          targetUid: widget.targetUser.uid,
+          currentUserName: currentUser.username,
+          currentUserPhotoUrl: currentUser.photoUrl,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -230,6 +254,19 @@ class _ChatPageState extends State<ChatPage> {
             );
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.call_rounded, size: 22),
+            tooltip: 'Panggilan Suara',
+            onPressed: () => _startCall(false),
+          ),
+          IconButton(
+            icon: const Icon(Icons.videocam_rounded, size: 22),
+            tooltip: 'Panggilan Video',
+            onPressed: () => _startCall(true),
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       body: Column(
         children: [
