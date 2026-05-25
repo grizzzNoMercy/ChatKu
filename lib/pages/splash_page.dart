@@ -45,8 +45,11 @@ class _SplashPageState extends State<SplashPage>
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       // Set online
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).update(
-          {'online': true, 'lastSeen': Timestamp.now()}).catchError((_) {});
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({'online': true, 'lastSeen': Timestamp.now()})
+          .catchError((_) {});
       if (mounted) {
         context.read<PresenceService>().init();
         Navigator.pushReplacement(
@@ -73,7 +76,7 @@ class _SplashPageState extends State<SplashPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF6C63FF),
+      backgroundColor: const Color(0xFF111111),
       body: Center(
         child: FadeTransition(
           opacity: _fadeAnim,
@@ -88,21 +91,14 @@ class _SplashPageState extends State<SplashPage>
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
                   ),
                   child: const Icon(
                     Icons.chat_bubble_rounded,
-                    color: Color(0xFF6C63FF),
+                    color: Color(0xFF111111),
                     size: 48,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 const Text(
                   'ChatKu',
                   style: TextStyle(
@@ -116,8 +112,8 @@ class _SplashPageState extends State<SplashPage>
                 Text(
                   'Realtime · Presence · Connected',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.75),
-                    fontSize: 14,
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 13,
                     letterSpacing: 0.5,
                   ),
                 ),

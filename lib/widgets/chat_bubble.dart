@@ -39,9 +39,9 @@ class ChatBubble extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Text(
                 time,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 11,
-                  color: Colors.grey[400],
+                  color: Color(0xFF999999),
                 ),
               ),
             ),
@@ -79,25 +79,21 @@ class _TextBubble extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: isMe ? const Color(0xFF6C63FF) : Colors.white,
+        color: isMe ? const Color(0xFF111111) : Colors.white,
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(18),
           topRight: const Radius.circular(18),
           bottomLeft: Radius.circular(isMe ? 18 : 4),
           bottomRight: Radius.circular(isMe ? 4 : 18),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
+        border: isMe
+            ? null
+            : Border.all(color: const Color(0xFFE5E5E5), width: 1),
       ),
       child: Text(
         text,
         style: TextStyle(
-          color: isMe ? Colors.white : const Color(0xFF1A1A2E),
+          color: isMe ? Colors.white : const Color(0xFF111111),
           fontSize: 15,
           height: 1.4,
         ),
@@ -115,10 +111,10 @@ class _ImageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.only(
-        topLeft: const Radius.circular(16),
-        topRight: const Radius.circular(16),
-        bottomLeft: Radius.circular(isMe ? 16 : 4),
-        bottomRight: Radius.circular(isMe ? 4 : 16),
+        topLeft: const Radius.circular(18),
+        topRight: const Radius.circular(18),
+        bottomLeft: Radius.circular(isMe ? 18 : 4),
+        bottomRight: Radius.circular(isMe ? 4 : 18),
       ),
       child: GestureDetector(
         onTap: () => _showFullImage(context),
@@ -130,10 +126,10 @@ class _ImageBubble extends StatelessWidget {
           placeholder: (_, __) => Container(
             width: 200,
             height: 200,
-            color: Colors.grey[200],
+            color: const Color(0xFFF5F5F5),
             child: const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF6C63FF),
+                color: Color(0xFF111111),
                 strokeWidth: 2,
               ),
             ),
@@ -141,8 +137,9 @@ class _ImageBubble extends StatelessWidget {
           errorWidget: (_, __, ___) => Container(
             width: 200,
             height: 120,
-            color: Colors.grey[200],
-            child: const Icon(Icons.broken_image_rounded, color: Colors.grey),
+            color: const Color(0xFFF5F5F5),
+            child: const Icon(Icons.broken_image_rounded,
+                color: Color(0xFF999999)),
           ),
         ),
       ),
@@ -183,12 +180,12 @@ class _VideoBubble extends StatelessWidget {
         width: 200,
         height: 120,
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A2E),
+          color: const Color(0xFF111111),
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(isMe ? 16 : 4),
-            bottomRight: Radius.circular(isMe ? 4 : 16),
+            topLeft: const Radius.circular(18),
+            topRight: const Radius.circular(18),
+            bottomLeft: Radius.circular(isMe ? 18 : 4),
+            bottomRight: Radius.circular(isMe ? 4 : 18),
           ),
         ),
         child: Stack(
@@ -196,7 +193,7 @@ class _VideoBubble extends StatelessWidget {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               padding: const EdgeInsets.all(14),
@@ -214,7 +211,7 @@ class _VideoBubble extends StatelessWidget {
                 child: Text(
                   'Ketuk untuk putar video',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 11,
                   ),
                 ),
@@ -264,27 +261,23 @@ class _FileBubble extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: isMe ? const Color(0xFF6C63FF) : Colors.white,
+          color: isMe ? const Color(0xFF111111) : Colors.white,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(18),
             topRight: const Radius.circular(18),
             bottomLeft: Radius.circular(isMe ? 18 : 4),
             bottomRight: Radius.circular(isMe ? 4 : 18),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
+          border: isMe
+              ? null
+              : Border.all(color: const Color(0xFFE5E5E5), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               _iconForFile(fileName),
-              color: isMe ? Colors.white70 : const Color(0xFF6C63FF),
+              color: isMe ? Colors.white70 : const Color(0xFF111111),
               size: 28,
             ),
             const SizedBox(width: 10),
@@ -295,7 +288,7 @@ class _FileBubble extends StatelessWidget {
                   Text(
                     fileName,
                     style: TextStyle(
-                      color: isMe ? Colors.white : const Color(0xFF1A1A2E),
+                      color: isMe ? Colors.white : const Color(0xFF111111),
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                     ),
@@ -306,8 +299,8 @@ class _FileBubble extends StatelessWidget {
                     'Ketuk untuk buka',
                     style: TextStyle(
                       color: isMe
-                          ? Colors.white.withOpacity(0.7)
-                          : Colors.grey[500],
+                          ? Colors.white.withValues(alpha: 0.7)
+                          : const Color(0xFF999999),
                       fontSize: 11,
                     ),
                   ),
