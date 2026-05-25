@@ -14,6 +14,15 @@ class StorageService {
     return await ref.getDownloadURL();
   }
 
+  static Future<String> uploadGroupPhoto({
+    required String groupId,
+    required File file,
+  }) async {
+    final ref = _storage.ref().child('groups/$groupId/avatar.jpg');
+    await ref.putFile(file);
+    return await ref.getDownloadURL();
+  }
+
   static Future<String> uploadChatFile({
     required String roomId,
     required File file,

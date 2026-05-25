@@ -1,65 +1,55 @@
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:provider/provider.dart';
-import '../models/user_model.dart';
+import '../models/group_model.dart';
 import '../models/message_model.dart';
-import '../services/auth_service.dart';
-import '../services/chat_service.dart';
-import '../services/presence_service.dart';
+import '../models/user_model.dart';
+import '../services/group_service.dart';
 import '../utils/avatar_helper.dart';
 import '../widgets/chat_bubble.dart';
-import '../widgets/presence_widget.dart';
-import 'call_page.dart';
 
-class ChatPage extends StatefulWidget {
-  final UserModel targetUser;
+class GroupChatPage extends StatefulWidget {
+  final GroupModel initialGroup;
   final String currentUid;
 
-  const ChatPage({
+  const GroupChatPage({
     super.key,
-    required this.targetUser,
+    required this.initialGroup,
     required this.currentUid,
   });
 
   @override
-  State<ChatPage> createState() => _ChatPageState();
+  State<GroupChatPage> createState() => _GroupChatPageState();
 }
 
-class _ChatPageState extends State<ChatPage> {
+class _GroupChatPageState extends State<GroupChatPage> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
-  late final String _roomId;
   bool _sending = false;
   bool _showAttachMenu = false;
+  Map<String, UserModel> _membersMap = {};
 
   @override
   void initState() {
     super.initState();
-    _roomId = ChatService.getRoomId(widget.currentUid, widget.targetUser.uid);
-    _initRoom();
+    _loadMembers();
   }
 
-  Future<void> _initRoom() async {
-    await ChatService.ensureRoom(
-      _roomId,
-      widget.currentUid,
-      widget.targetUser.uid,
-    );
-    if (mounted) {
-      context.read<PresenceService>().enterRoom(_roomId);
+  Future<void> _loadMembers() async {
+    for (String uid in widget.initialGroup.members) {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (doc.exists && mounted) {
+        setState(() {
+          _membersMap[uid] = UserModel.fromMap(doc.data()!);
+        });
+      }
     }
   }
 
   @override
   void dispose() {
-    context.read<PresenceService>().leaveRoom(_roomId);
-    context.read<PresenceService>().setTyping(
-      roomId: _roomId,
-      uid: widget.currentUid,
-      isTyping: false,
-    );
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -82,15 +72,9 @@ class _ChatPageState extends State<ChatPage> {
     if (text.isEmpty || _sending) return;
     _messageController.clear();
     setState(() => _sending = true);
-    await context.read<PresenceService>().setTyping(
-      roomId: _roomId,
-      uid: widget.currentUid,
-      isTyping: false,
-    );
-    await ChatService.sendTextMessage(
-      roomId: _roomId,
+    await GroupService.sendTextMessage(
+      groupId: widget.initialGroup.id,
       senderId: widget.currentUid,
-      receiverId: widget.targetUser.uid,
       message: text,
     );
     setState(() => _sending = false);
@@ -106,10 +90,9 @@ class _ChatPageState extends State<ChatPage> {
     );
     if (picked == null || !mounted) return;
     setState(() => _sending = true);
-    await ChatService.sendImage(
-      roomId: _roomId,
+    await GroupService.sendImage(
+      groupId: widget.initialGroup.id,
       senderId: widget.currentUid,
-      receiverId: widget.targetUser.uid,
       file: File(picked.path),
     );
     setState(() => _sending = false);
@@ -122,10 +105,9 @@ class _ChatPageState extends State<ChatPage> {
     final picked = await picker.pickVideo(source: ImageSource.gallery);
     if (picked == null || !mounted) return;
     setState(() => _sending = true);
-    await ChatService.sendVideo(
-      roomId: _roomId,
+    await GroupService.sendVideo(
+      groupId: widget.initialGroup.id,
       senderId: widget.currentUid,
-      receiverId: widget.targetUser.uid,
       file: File(picked.path),
     );
     setState(() => _sending = false);
@@ -142,45 +124,14 @@ class _ChatPageState extends State<ChatPage> {
     final file = result.files.first;
     if (file.path == null) return;
     setState(() => _sending = true);
-    await ChatService.sendFile(
-      roomId: _roomId,
+    await GroupService.sendFile(
+      groupId: widget.initialGroup.id,
       senderId: widget.currentUid,
-      receiverId: widget.targetUser.uid,
       file: File(file.path!),
       fileName: file.name,
     );
     setState(() => _sending = false);
     _scrollToBottom();
-  }
-
-  void _onTypingChanged(String value) {
-    context.read<PresenceService>().setTyping(
-      roomId: _roomId,
-      uid: widget.currentUid,
-      isTyping: value.isNotEmpty,
-    );
-  }
-
-  Future<void> _startCall(bool isVideo) async {
-    final authService = context.read<AuthService>();
-    final currentUser = await authService.getCurrentUserData();
-    if (!mounted || currentUser == null) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CallPage(
-          currentUid: widget.currentUid,
-          targetName: widget.targetUser.username,
-          targetPhotoUrl: widget.targetUser.photoUrl,
-          isVideo: isVideo,
-          isCaller: true,
-          targetUid: widget.targetUser.uid,
-          currentUserName: currentUser.username,
-          currentUserPhotoUrl: currentUser.photoUrl,
-        ),
-      ),
-    );
   }
 
   @override
@@ -189,51 +140,30 @@ class _ChatPageState extends State<ChatPage> {
       appBar: AppBar(
         titleSpacing: 0,
         leading: const BackButton(),
-        title: StreamBuilder<UserModel?>(
-          stream: ChatService.userStream(widget.targetUser.uid),
+        title: StreamBuilder<GroupModel?>(
+          stream: GroupService.groupStream(widget.initialGroup.id),
           builder: (context, snapshot) {
-            final user = snapshot.data ?? widget.targetUser;
+            final group = snapshot.data ?? widget.initialGroup;
             return Row(
               children: [
-                Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor:
-                          AvatarHelper.backgroundColor(user.username),
-                      backgroundImage: user.photoUrl.isNotEmpty
-                          ? NetworkImage(user.photoUrl)
-                          : null,
-                      child: user.photoUrl.isEmpty
-                          ? Text(
-                              user.username.isNotEmpty
-                                  ? user.username[0].toUpperCase()
-                                  : '?',
-                              style: TextStyle(
-                                color:
-                                    AvatarHelper.textColor(user.username),
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                              ),
-                            )
-                          : null,
-                    ),
-                    if (user.online)
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF34C759),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                                color: Colors.white, width: 1.5),
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: AvatarHelper.backgroundColor(group.name),
+                  backgroundImage: group.photoUrl.isNotEmpty
+                      ? NetworkImage(group.photoUrl)
+                      : null,
+                  child: group.photoUrl.isEmpty
+                      ? Text(
+                          group.name.isNotEmpty
+                              ? group.name[0].toUpperCase()
+                              : '?',
+                          style: TextStyle(
+                            color: AvatarHelper.textColor(group.name),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
                           ),
-                        ),
-                      ),
-                  ],
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -241,7 +171,7 @@ class _ChatPageState extends State<ChatPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        user.username,
+                        group.name,
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -250,10 +180,12 @@ class _ChatPageState extends State<ChatPage> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      PresenceWidget(
-                        user: user,
-                        roomId: _roomId,
-                        currentUid: widget.currentUid,
+                      Text(
+                        '${group.members.length} anggota',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF999999),
+                        ),
                       ),
                     ],
                   ),
@@ -262,33 +194,17 @@ class _ChatPageState extends State<ChatPage> {
             );
           },
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.call_outlined, size: 22),
-            tooltip: 'Panggilan Suara',
-            onPressed: () => _startCall(false),
-          ),
-          IconButton(
-            icon: const Icon(Icons.videocam_outlined, size: 22),
-            tooltip: 'Panggilan Video',
-            onPressed: () => _startCall(true),
-          ),
-          const SizedBox(width: 4),
-        ],
       ),
       body: Column(
         children: [
           // Messages
           Expanded(
             child: StreamBuilder<List<MessageModel>>(
-              stream: ChatService.messagesStream(_roomId),
+              stream: GroupService.messagesStream(widget.initialGroup.id),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFF111111),
-                      strokeWidth: 2,
-                    ),
+                    child: CircularProgressIndicator(color: Color(0xFF111111)),
                   );
                 }
                 final messages = snapshot.data ?? [];
@@ -301,13 +217,13 @@ class _ChatPageState extends State<ChatPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons.chat_bubble_outline_rounded,
+                          Icons.forum_outlined,
                           size: 56,
                           color: Color(0xFFE5E5E5),
                         ),
                         SizedBox(height: 14),
                         Text(
-                          'Mulai percakapan',
+                          'Mulai obrolan grup',
                           style: TextStyle(
                             color: Color(0xFF999999),
                             fontSize: 14,
@@ -319,10 +235,7 @@ class _ChatPageState extends State<ChatPage> {
                 }
                 return ListView.builder(
                   controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   itemCount: messages.length,
                   itemBuilder: (context, i) {
                     final msg = messages[i];
@@ -330,10 +243,26 @@ class _ChatPageState extends State<ChatPage> {
                     final showDate = i == 0 ||
                         messages[i].timestamp.toDate().day !=
                             messages[i - 1].timestamp.toDate().day;
+                    
+                    final senderName = _membersMap[msg.senderId]?.username ?? 'Anggota';
+
                     return Column(
+                      crossAxisAlignment:
+                          isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                       children: [
-                        if (showDate)
-                          _DateDivider(msg.timestamp.toDate()),
+                        if (showDate) _DateDivider(msg.timestamp.toDate()),
+                        if (!isMe)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 12, bottom: 4, top: 8),
+                            child: Text(
+                              senderName,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AvatarHelper.textColor(senderName),
+                              ),
+                            ),
+                          ),
                         ChatBubble(message: msg, isMe: isMe),
                       ],
                     );
@@ -341,35 +270,6 @@ class _ChatPageState extends State<ChatPage> {
                 );
               },
             ),
-          ),
-
-          // Typing indicator
-          StreamBuilder<bool>(
-            stream: context.read<PresenceService>().typingStream(
-              roomId: _roomId,
-              otherUid: widget.targetUser.uid,
-            ),
-            builder: (context, snapshot) {
-              final isTyping = snapshot.data ?? false;
-              if (!isTyping) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.only(left: 20, bottom: 4),
-                child: Row(
-                  children: [
-                    Text(
-                      '${widget.targetUser.username} sedang mengetik',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF999999),
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    _TypingDots(),
-                  ],
-                ),
-              );
-            },
           ),
 
           // Attach menu
@@ -384,10 +284,8 @@ class _ChatPageState extends State<ChatPage> {
           _InputBar(
             controller: _messageController,
             sending: _sending,
-            onChanged: _onTypingChanged,
             onSend: _sendMessage,
-            onAttach: () =>
-                setState(() => _showAttachMenu = !_showAttachMenu),
+            onAttach: () => setState(() => _showAttachMenu = !_showAttachMenu),
           ),
         ],
       ),
@@ -403,9 +301,7 @@ class _DateDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     String label;
-    if (date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day) {
+    if (date.year == now.year && date.month == now.month && date.day == now.day) {
       label = 'Hari ini';
     } else if (date.year == now.year &&
         date.month == now.month &&
@@ -418,8 +314,7 @@ class _DateDivider extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 14),
       child: Center(
         child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
           decoration: BoxDecoration(
             color: const Color(0xFFF5F5F5),
             borderRadius: BorderRadius.circular(12),
@@ -434,60 +329,6 @@ class _DateDivider extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _TypingDots extends StatefulWidget {
-  @override
-  State<_TypingDots> createState() => _TypingDotsState();
-}
-
-class _TypingDotsState extends State<_TypingDots>
-    with TickerProviderStateMixin {
-  late List<AnimationController> _controllers;
-
-  @override
-  void initState() {
-    super.initState();
-    _controllers = List.generate(3, (i) {
-      final c = AnimationController(
-        vsync: this,
-        duration: const Duration(milliseconds: 400),
-      );
-      Future.delayed(Duration(milliseconds: i * 150), () {
-        if (mounted) c.repeat(reverse: true);
-      });
-      return c;
-    });
-  }
-
-  @override
-  void dispose() {
-    for (final c in _controllers) {
-      c.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: _controllers.map((c) {
-        return AnimatedBuilder(
-          animation: c,
-          builder: (_, __) => Container(
-            margin: const EdgeInsets.symmetric(horizontal: 1.5),
-            width: 4,
-            height: 4 + c.value * 3,
-            decoration: BoxDecoration(
-              color: const Color(0xFF999999),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        );
-      }).toList(),
     );
   }
 }
@@ -581,14 +422,12 @@ class _AttachItem extends StatelessWidget {
 class _InputBar extends StatelessWidget {
   final TextEditingController controller;
   final bool sending;
-  final ValueChanged<String> onChanged;
   final VoidCallback onSend;
   final VoidCallback onAttach;
 
   const _InputBar({
     required this.controller,
     required this.sending,
-    required this.onChanged,
     required this.onSend,
     required this.onAttach,
   });
@@ -623,7 +462,6 @@ class _InputBar extends StatelessWidget {
             Expanded(
               child: TextField(
                 controller: controller,
-                onChanged: onChanged,
                 maxLines: 4,
                 minLines: 1,
                 textCapitalization: TextCapitalization.sentences,
@@ -674,7 +512,7 @@ class _InputBar extends StatelessWidget {
                           ? Icons.hourglass_empty_rounded
                           : (hasText
                               ? Icons.send_rounded
-                              : Icons.mic_none_rounded),
+                              : Icons.mic_none_rounded), // fallback to mic or similar
                       color: Colors.white,
                       size: 18,
                     ),

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/presence_service.dart';
+import '../utils/avatar_helper.dart';
 import 'login_page.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -64,15 +65,18 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() => _saving = false);
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: const Color(0xFFE53E3E)),
+        SnackBar(
+          content: Text(error),
+          backgroundColor: const Color(0xFFFF3B30),
+        ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Profil berhasil diperbarui'),
-          backgroundColor: const Color(0xFF48BB78),
+          backgroundColor: const Color(0xFF34C759),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         ),
       );
       _loadUser();
@@ -83,8 +87,14 @@ class _ProfilePageState extends State<ProfilePage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Keluar'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text(
+          'Keluar',
+          style: TextStyle(
+            color: Color(0xFF111111),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         content: const Text('Apakah kamu yakin ingin keluar?'),
         actions: [
           TextButton(
@@ -95,7 +105,7 @@ class _ProfilePageState extends State<ProfilePage> {
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text(
               'Keluar',
-              style: TextStyle(color: Color(0xFFE53E3E)),
+              style: TextStyle(color: Color(0xFFFF3B30)),
             ),
           ),
         ],
@@ -133,13 +143,13 @@ class _ProfilePageState extends State<ProfilePage> {
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Color(0xFF6C63FF),
+                      color: Color(0xFF111111),
                     ),
                   )
                 : const Text(
                     'Simpan',
                     style: TextStyle(
-                      color: Color(0xFF6C63FF),
+                      color: Color(0xFF111111),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -148,10 +158,10 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       body: _loading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF6C63FF)),
+              child: CircularProgressIndicator(color: Color(0xFF111111)),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -163,7 +173,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         children: [
                           CircleAvatar(
                             radius: 52,
-                            backgroundColor: const Color(0xFFEEECFF),
+                            backgroundColor: AvatarHelper.backgroundColor(
+                                _userData?.username ?? ''),
                             backgroundImage: _newPhoto != null
                                 ? FileImage(_newPhoto!)
                                 : (_userData?.photoUrl.isNotEmpty == true
@@ -176,8 +187,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                     _userData?.username.isNotEmpty == true
                                         ? _userData!.username[0].toUpperCase()
                                         : '?',
-                                    style: const TextStyle(
-                                      color: Color(0xFF6C63FF),
+                                    style: TextStyle(
+                                      color: AvatarHelper.textColor(
+                                          _userData?.username ?? ''),
                                       fontWeight: FontWeight.w700,
                                       fontSize: 36,
                                     ),
@@ -191,7 +203,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               width: 30,
                               height: 30,
                               decoration: const BoxDecoration(
-                                color: Color(0xFF6C63FF),
+                                color: Color(0xFF111111),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
@@ -207,15 +219,20 @@ class _ProfilePageState extends State<ProfilePage> {
                     const SizedBox(height: 8),
                     TextButton(
                       onPressed: _pickPhoto,
-                      child: const Text('Ganti foto'),
+                      child: const Text(
+                        'Ganti foto',
+                        style: TextStyle(color: Color(0xFF999999)),
+                      ),
                     ),
                     const SizedBox(height: 24),
                     // Username field
                     TextFormField(
                       controller: _usernameController,
                       decoration: const InputDecoration(
-                        labelText: 'Username',
-                        prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
+                        hintText: 'Username',
+                        hintStyle: TextStyle(color: Color(0xFF999999)),
+                        prefixIcon: Icon(Icons.person_outline_rounded,
+                            size: 20, color: Color(0xFF999999)),
                       ),
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Username wajib diisi';
@@ -228,11 +245,13 @@ class _ProfilePageState extends State<ProfilePage> {
                     TextFormField(
                       initialValue: _userData?.email ?? '',
                       readOnly: true,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: const Icon(Icons.mail_outline_rounded, size: 20),
+                      decoration: const InputDecoration(
+                        hintText: 'Email',
+                        hintStyle: TextStyle(color: Color(0xFF999999)),
+                        prefixIcon: Icon(Icons.mail_outline_rounded,
+                            size: 20, color: Color(0xFF999999)),
                         filled: true,
-                        fillColor: Colors.grey[100],
+                        fillColor: Color(0xFFF5F5F5),
                       ),
                     ),
                     const SizedBox(height: 40),
@@ -241,21 +260,21 @@ class _ProfilePageState extends State<ProfilePage> {
                       onPressed: _logout,
                       icon: const Icon(
                         Icons.logout_rounded,
-                        color: Color(0xFFE53E3E),
+                        color: Color(0xFFFF3B30),
                         size: 18,
                       ),
                       label: const Text(
                         'Keluar',
                         style: TextStyle(
-                          color: Color(0xFFE53E3E),
+                          color: Color(0xFFFF3B30),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50),
-                        side: const BorderSide(color: Color(0xFFE53E3E)),
+                        minimumSize: const Size(double.infinity, 54),
+                        side: const BorderSide(color: Color(0xFFFF3B30)),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(28),
                         ),
                       ),
                     ),
