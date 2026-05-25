@@ -1,4 +1,4 @@
-# ChatSphere 💬
+# ChatKu 💬
 
 Realtime Chat Application with Live Presence System — dibangun dengan Flutter + Firebase.
 
@@ -48,13 +48,13 @@ lib/
 ### 1. Buat Firebase Project
 
 1. Buka [Firebase Console](https://console.firebase.google.com)
-2. Klik **Add project** → beri nama `ChatSphere`
+2. Klik **Add project** → beri nama `ChatKu`
 3. Aktifkan **Google Analytics** (opsional)
 
 ### 2. Tambahkan Android App
 
 1. Di Firebase Console → **Project Settings** → **Add app** → pilih Android
-2. Package name: `com.example.chatsphere`
+2. Package name: `com.example.chatku`
 3. Download `google-services.json`
 4. Letakkan di: `android/app/google-services.json`
 
@@ -84,7 +84,7 @@ import 'package:timeago/timeago.dart' as timeago;
 void main() async {
   // ...
   timeago.setLocaleMessages('id', timeago.IdMessages());
-  runApp(const ChatSphereApp());
+  runApp(const ChatKuApp());
 }
 ```
 
