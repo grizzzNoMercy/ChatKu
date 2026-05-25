@@ -47,6 +47,7 @@ class AuthService extends ChangeNotifier {
         photoUrl: photoUrl,
         online: true,
         lastSeen: Timestamp.now(),
+        contacts: [],
       );
 
       await _firestore

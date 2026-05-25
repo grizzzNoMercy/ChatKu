@@ -6,6 +6,7 @@ class UserModel {
   final String email;
   final String photoUrl;
   final bool online;
+  final List<String> contacts;
   final Timestamp? lastSeen;
   final bool inRoom;
   final String currentRoom;
@@ -21,6 +22,7 @@ class UserModel {
     this.inRoom = false,
     this.currentRoom = '',
     this.lastRoomLeave,
+    this.contacts = const [],
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
@@ -34,6 +36,7 @@ class UserModel {
       inRoom: map['inRoom'] ?? false,
       currentRoom: map['currentRoom'] ?? '',
       lastRoomLeave: map['lastRoomLeave'],
+      contacts: List<String>.from(map['contacts'] ?? []),
     );
   }
 
@@ -48,6 +51,7 @@ class UserModel {
       'inRoom': inRoom,
       'currentRoom': currentRoom,
       'lastRoomLeave': lastRoomLeave,
+      'contacts': contacts,
     };
   }
 
@@ -61,6 +65,7 @@ class UserModel {
     bool? inRoom,
     String? currentRoom,
     Timestamp? lastRoomLeave,
+    List<String>? contacts,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -72,6 +77,7 @@ class UserModel {
       inRoom: inRoom ?? this.inRoom,
       currentRoom: currentRoom ?? this.currentRoom,
       lastRoomLeave: lastRoomLeave ?? this.lastRoomLeave,
+      contacts: contacts ?? this.contacts,
     );
   }
 }
