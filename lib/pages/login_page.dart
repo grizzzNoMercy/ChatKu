@@ -42,9 +42,10 @@ class _LoginPageState extends State<LoginPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(error),
-          backgroundColor: const Color(0xFFE53E3E),
+          backgroundColor: const Color(0xFFFF3B30),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         ),
       );
     } else {
@@ -61,44 +62,48 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 28),
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 60),
                 // Logo
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6C63FF),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon(
-                    Icons.chat_bubble_rounded,
-                    color: Colors.white,
-                    size: 32,
+                Center(
+                  child: Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF111111),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(
+                      Icons.chat_bubble_rounded,
+                      color: Colors.white,
+                      size: 36,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 32),
                 const Text(
-                  'Selamat datang\nkembali 👋',
+                  'Selamat datang\nkembali',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF1A1A2E),
+                    color: Color(0xFF111111),
                     height: 1.2,
                     letterSpacing: -0.5,
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
+                const Text(
                   'Masuk untuk melanjutkan chat',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
-                    color: Colors.grey[500],
+                    color: Color(0xFF999999),
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -107,8 +112,10 @@ class _LoginPageState extends State<LoginPage> {
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.mail_outline_rounded, size: 20),
+                    hintText: 'Email',
+                    hintStyle: TextStyle(color: Color(0xFF999999)),
+                    prefixIcon: Icon(Icons.mail_outline_rounded,
+                        size: 20, color: Color(0xFF999999)),
                   ),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Email wajib diisi';
@@ -116,29 +123,40 @@ class _LoginPageState extends State<LoginPage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 // Password
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscure,
                   decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                    hintText: 'Password',
+                    hintStyle:
+                        const TextStyle(color: Color(0xFF999999)),
+                    prefixIcon: const Icon(Icons.lock_outline_rounded,
+                        size: 20, color: Color(0xFF999999)),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                        _obscure
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
                         size: 20,
+                        color: const Color(0xFF999999),
                       ),
-                      onPressed: () => setState(() => _obscure = !_obscure),
+                      onPressed: () =>
+                          setState(() => _obscure = !_obscure),
                     ),
                   ),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Password wajib diisi';
-                    if (v.length < 6) return 'Password minimal 6 karakter';
+                    if (v == null || v.isEmpty) {
+                      return 'Password wajib diisi';
+                    }
+                    if (v.length < 6) {
+                      return 'Password minimal 6 karakter';
+                    }
                     return null;
                   },
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 32),
                 // Login button
                 ElevatedButton(
                   onPressed: _loading ? null : _login,
@@ -153,25 +171,29 @@ class _LoginPageState extends State<LoginPage> {
                         )
                       : const Text('Masuk'),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 // Register link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
+                    const Text(
                       'Belum punya akun? ',
-                      style: TextStyle(color: Colors.grey[500]),
+                      style: TextStyle(color: Color(0xFF999999)),
                     ),
-                    TextButton(
-                      onPressed: () {
+                    GestureDetector(
+                      onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const RegisterPage()),
+                          MaterialPageRoute(
+                              builder: (_) => const RegisterPage()),
                         );
                       },
                       child: const Text(
                         'Daftar',
-                        style: TextStyle(fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: Color(0xFF111111),
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],

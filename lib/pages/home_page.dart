@@ -2,14 +2,19 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/group_model.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/call_service.dart';
 import '../services/chat_service.dart';
 import '../services/contact_service.dart';
+import '../services/group_service.dart';
+import '../utils/avatar_helper.dart';
 import '../widgets/user_tile.dart';
 import 'chat_page.dart';
+import 'create_group_page.dart';
 import 'friend_requests_page.dart';
+import 'group_chat_page.dart';
 import 'incoming_call_page.dart';
 import 'profile_page.dart';
 
@@ -25,12 +30,14 @@ class _HomePageState extends State<HomePage> {
   String _searchQuery = '';
   StreamSubscription<QuerySnapshot>? _callSub;
   String? _handlingCallId;
+  Map<String, Timestamp> _userLastMessageTimes = {};
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _listenForIncomingCalls();
+      _fetchUserLastMessages();
     });
   }
 
@@ -60,6 +67,29 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  Future<void> _fetchUserLastMessages() async {
+    final currentUid = context.read<AuthService>().currentUid;
+    if (currentUid == null) return;
+
+    FirebaseFirestore.instance
+        .collection('chat_rooms')
+        .where('participants', arrayContains: currentUid)
+        .snapshots()
+        .listen((snap) {
+      if (!mounted) return;
+      final newTimes = <String, Timestamp>{};
+      for (var doc in snap.docs) {
+        final participants = List<String>.from(doc['participants'] ?? []);
+        participants.remove(currentUid);
+        if (participants.isNotEmpty) {
+          newTimes[participants.first] =
+              doc['lastTimestamp'] ?? Timestamp(0, 0);
+        }
+      }
+      setState(() => _userLastMessageTimes = newTimes);
+    });
+  }
+
   @override
   void dispose() {
     _callSub?.cancel();
@@ -67,7 +97,92 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  // ── Add Contact Dialog ──────────────────────────────────────────────────
+  // ── FAB Popup Menu ────────────────────────────────────────────────────
+  void _showNewChatMenu(String currentUid) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE5E5E5),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Buat Baru',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111111),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _MenuOption(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  label: 'Chat',
+                  subtitle: 'Mulai percakapan baru',
+                  onTap: () => Navigator.pop(ctx),
+                ),
+                _MenuOption(
+                  icon: Icons.person_add_outlined,
+                  label: 'Kontak',
+                  subtitle: 'Tambahkan kontak baru',
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showAddContactDialog(currentUid);
+                  },
+                ),
+                _MenuOption(
+                  icon: Icons.group_outlined,
+                  label: 'Grup',
+                  subtitle: 'Buat grup chat',
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const CreateGroupPage()),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showComingSoon() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Segera hadir'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // ── Add Contact Dialog ──────────────────────────────────────────────
   void _showAddContactDialog(String currentUid) {
     final emailController = TextEditingController();
     UserModel? foundUser;
@@ -82,19 +197,19 @@ class _HomePageState extends State<HomePage> {
           builder: (ctx, setDialogState) {
             return AlertDialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(24),
               ),
               title: const Row(
                 children: [
-                  Icon(Icons.person_add_rounded,
-                      color: Color(0xFF6C63FF), size: 24),
+                  Icon(Icons.person_add_outlined,
+                      color: Color(0xFF111111), size: 22),
                   SizedBox(width: 10),
                   Text(
                     'Tambah Kontak',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF1A1A2E),
+                      color: Color(0xFF111111),
                     ),
                   ),
                 ],
@@ -103,14 +218,13 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Email input
                     TextField(
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(
                         hintText: 'Masukkan email pengguna',
-                        prefixIcon:
-                            Icon(Icons.email_outlined, size: 20),
+                        hintStyle: TextStyle(color: Color(0xFF999999)),
+                        prefixIcon: Icon(Icons.email_outlined, size: 20),
                       ),
                       onChanged: (_) {
                         if (foundUser != null || errorMsg != null) {
@@ -123,8 +237,6 @@ class _HomePageState extends State<HomePage> {
                       },
                     ),
                     const SizedBox(height: 14),
-
-                    // Search button
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
@@ -134,22 +246,25 @@ class _HomePageState extends State<HomePage> {
                                 height: 16,
                                 child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: Color(0xFF6C63FF)),
+                                    color: Color(0xFF111111)),
                               )
                             : const Icon(Icons.search_rounded, size: 18),
                         label: Text(isLoading ? 'Mencari...' : 'Cari'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF6C63FF),
-                          side: const BorderSide(color: Color(0xFF6C63FF)),
+                          foregroundColor: const Color(0xFF111111),
+                          side: const BorderSide(
+                              color: Color(0xFFE5E5E5)),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(28),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 12),
                         ),
                         onPressed: isLoading
                             ? null
                             : () async {
-                                final email = emailController.text.trim();
+                                final email =
+                                    emailController.text.trim();
                                 if (email.isEmpty) return;
 
                                 setDialogState(() {
@@ -159,7 +274,6 @@ class _HomePageState extends State<HomePage> {
                                   requestSent = false;
                                 });
 
-                                // Validate: own email
                                 final currentEmail = context
                                     .read<AuthService>()
                                     .currentUser
@@ -179,8 +293,7 @@ class _HomePageState extends State<HomePage> {
                                 if (user == null) {
                                   setDialogState(() {
                                     isLoading = false;
-                                    errorMsg =
-                                        'Email tidak ditemukan.';
+                                    errorMsg = 'Email tidak ditemukan.';
                                   });
                                   return;
                                 }
@@ -192,26 +305,24 @@ class _HomePageState extends State<HomePage> {
                               },
                       ),
                     ),
-
-                    // Error message
                     if (errorMsg != null) ...[
                       const SizedBox(height: 14),
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.red[50],
-                          borderRadius: BorderRadius.circular(12),
+                          color: const Color(0xFFFFF0F0),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.error_outline_rounded,
-                                color: Colors.red[400], size: 20),
+                            const Icon(Icons.error_outline_rounded,
+                                color: Color(0xFFFF3B30), size: 18),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 errorMsg!,
-                                style: TextStyle(
-                                  color: Colors.red[700],
+                                style: const TextStyle(
+                                  color: Color(0xFFFF3B30),
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -221,27 +332,25 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ],
-
-                    // Found user preview
                     if (foundUser != null) ...[
                       const SizedBox(height: 16),
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF3F2FF),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: const Color(0xFFD9D6FF),
-                          ),
+                          color: const Color(0xFFF5F5F5),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
                           children: [
                             CircleAvatar(
                               radius: 22,
-                              backgroundColor: const Color(0xFFEEECFF),
+                              backgroundColor:
+                                  AvatarHelper.backgroundColor(
+                                      foundUser!.username),
                               backgroundImage:
                                   foundUser!.photoUrl.isNotEmpty
-                                      ? NetworkImage(foundUser!.photoUrl)
+                                      ? NetworkImage(
+                                          foundUser!.photoUrl)
                                       : null,
                               child: foundUser!.photoUrl.isEmpty
                                   ? Text(
@@ -249,8 +358,9 @@ class _HomePageState extends State<HomePage> {
                                           ? foundUser!.username[0]
                                               .toUpperCase()
                                           : '?',
-                                      style: const TextStyle(
-                                        color: Color(0xFF6C63FF),
+                                      style: TextStyle(
+                                        color: AvatarHelper.textColor(
+                                            foundUser!.username),
                                         fontWeight: FontWeight.w700,
                                       ),
                                     )
@@ -267,15 +377,15 @@ class _HomePageState extends State<HomePage> {
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 15,
-                                      color: Color(0xFF1A1A2E),
+                                      color: Color(0xFF111111),
                                     ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     foundUser!.email,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[500],
+                                      color: Color(0xFF999999),
                                     ),
                                   ),
                                 ],
@@ -285,7 +395,6 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       const SizedBox(height: 14),
-                      // Send request button
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(
@@ -297,18 +406,18 @@ class _HomePageState extends State<HomePage> {
                           ),
                           label: Text(
                             requestSent
-                                ? 'Permintaan Terkirim!'
+                                ? 'Permintaan Terkirim'
                                 : 'Kirim Permintaan',
                           ),
                           style: FilledButton.styleFrom(
                             backgroundColor: requestSent
-                                ? const Color(0xFF48BB78)
-                                : const Color(0xFF6C63FF),
+                                ? const Color(0xFF34C759)
+                                : const Color(0xFF111111),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(28),
                             ),
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 12),
                           ),
                           onPressed: requestSent
                               ? null
@@ -345,24 +454,25 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ── Delete Contact Confirmation ─────────────────────────────────────────
+  // ── Delete Contact ──────────────────────────────────────────────────
   void _showDeleteContactDialog(String currentUid, UserModel user) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Text(
           'Hapus Kontak',
           style: TextStyle(
             fontWeight: FontWeight.w700,
             fontSize: 17,
-            color: Color(0xFF1A1A2E),
+            color: Color(0xFF111111),
           ),
         ),
         content: Text(
           'Hapus ${user.username} dari daftar kontak?\n'
           'Kontak ini juga akan dihapus dari sisi pengguna lain.',
-          style: const TextStyle(fontSize: 14),
+          style: const TextStyle(fontSize: 14, color: Color(0xFF666666)),
         ),
         actions: [
           TextButton(
@@ -371,9 +481,9 @@ class _HomePageState extends State<HomePage> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.red[400],
+              backgroundColor: const Color(0xFFFF3B30),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(28),
               ),
             ),
             onPressed: () async {
@@ -406,7 +516,6 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('ChatKu'),
         actions: [
-          // Friend request badge
           StreamBuilder<int>(
             stream: ContactService.pendingRequestCountStream(currentUid),
             builder: (context, snapshot) {
@@ -414,9 +523,11 @@ class _HomePageState extends State<HomePage> {
               return IconButton(
                 icon: Badge(
                   isLabelVisible: count > 0,
+                  backgroundColor: const Color(0xFF111111),
                   label: Text(
                     '$count',
-                    style: const TextStyle(fontSize: 10),
+                    style: const TextStyle(
+                        fontSize: 10, color: Colors.white),
                   ),
                   child: const Icon(Icons.people_outline_rounded),
                 ),
@@ -431,41 +542,46 @@ class _HomePageState extends State<HomePage> {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.person_outline_rounded),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfilePage()),
-              );
-            },
-          ),
           const SizedBox(width: 4),
         ],
       ),
-      // FAB for adding contacts
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF6C63FF),
+        backgroundColor: const Color(0xFF111111),
         foregroundColor: Colors.white,
-        elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        onPressed: () => _showAddContactDialog(currentUid),
-        child: const Icon(Icons.person_add_rounded),
+        elevation: 0,
+        highlightElevation: 0,
+        shape: const CircleBorder(),
+        onPressed: () => _showNewChatMenu(currentUid),
+        child: const Icon(Icons.add_rounded, size: 28),
+      ),
+      bottomNavigationBar: _BottomNavBar(
+        onPhoneTap: _showComingSoon,
+        onProfileTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ProfilePage()),
+          );
+        },
       ),
       body: Column(
         children: [
           // Search bar
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
             child: TextField(
               controller: _searchController,
-              onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+              onChanged: (v) =>
+                  setState(() => _searchQuery = v.toLowerCase()),
               decoration: InputDecoration(
-                hintText: 'Cari kontak...',
-                prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                hintText: 'Cari kontak atau grup...',
+                hintStyle: const TextStyle(
+                    color: Color(0xFF999999), fontSize: 14),
+                prefixIcon: const Icon(Icons.search_rounded,
+                    size: 20, color: Color(0xFF999999)),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, size: 18),
+                        icon: const Icon(Icons.clear_rounded,
+                            size: 18, color: Color(0xFF999999)),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _searchQuery = '');
@@ -475,94 +591,162 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          // Contact list (filtered by contacts only)
+          // Chat list
           Expanded(
             child: StreamBuilder<List<UserModel>>(
               stream: ContactService.contactsStream(currentUid),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFF6C63FF),
-                    ),
-                  );
-                }
-
-                final users = snapshot.data ?? [];
-                final filtered = _searchQuery.isEmpty
-                    ? users
-                    : users
-                        .where((u) =>
-                            u.username.toLowerCase().contains(_searchQuery) ||
-                            u.email.toLowerCase().contains(_searchQuery))
-                        .toList();
-
-                // Sort: online first, then by username
-                filtered.sort((a, b) {
-                  if (a.online && !b.online) return -1;
-                  if (!a.online && b.online) return 1;
-                  return a.username.compareTo(b.username);
-                });
-
-                if (filtered.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _searchQuery.isEmpty
-                              ? Icons.people_outline_rounded
-                              : Icons.search_off_rounded,
-                          size: 64,
-                          color: Colors.grey[300],
+              builder: (context, userSnap) {
+                return StreamBuilder<List<GroupModel>>(
+                  stream: GroupService.userGroupsStream(currentUid),
+                  builder: (context, groupSnap) {
+                    if (userSnap.connectionState == ConnectionState.waiting &&
+                        groupSnap.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF111111),
+                          strokeWidth: 2,
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          _searchQuery.isEmpty
-                              ? 'Belum ada kontak'
-                              : 'Tidak ada hasil untuk "$_searchQuery"',
-                          style: TextStyle(color: Colors.grey[400]),
-                        ),
-                        if (_searchQuery.isEmpty) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            'Tambahkan kontak baru dengan tombol +',
-                            style: TextStyle(
-                                color: Colors.grey[350], fontSize: 13),
-                          ),
-                        ],
-                      ],
-                    ),
-                  );
-                }
+                      );
+                    }
 
-                return ListView.separated(
-                  itemCount: filtered.length,
-                  separatorBuilder: (_, __) => const Divider(
-                    height: 1,
-                    indent: 80,
-                    endIndent: 16,
-                  ),
-                  itemBuilder: (context, i) {
-                    final user = filtered[i];
-                    final roomId =
-                        ChatService.getRoomId(currentUid, user.uid);
-                    return UserTile(
-                      user: user,
-                      roomId: roomId,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ChatPage(
-                              targetUser: user,
-                              currentUid: currentUid,
+                    final users = userSnap.data ?? [];
+                    final groups = groupSnap.data ?? [];
+
+                    List<dynamic> mixedList = [];
+                    mixedList.addAll(users);
+                    mixedList.addAll(groups);
+
+                    final filtered = _searchQuery.isEmpty
+                        ? mixedList
+                        : mixedList.where((item) {
+                            if (item is UserModel) {
+                              return item.username
+                                      .toLowerCase()
+                                      .contains(_searchQuery) ||
+                                  item.email
+                                      .toLowerCase()
+                                      .contains(_searchQuery);
+                            } else if (item is GroupModel) {
+                              return item.name
+                                  .toLowerCase()
+                                  .contains(_searchQuery);
+                            }
+                            return false;
+                          }).toList();
+
+                    filtered.sort((a, b) {
+                      Timestamp timeA = Timestamp(0, 0);
+                      Timestamp timeB = Timestamp(0, 0);
+
+                      if (a is GroupModel) {
+                        timeA = a.lastTimestamp;
+                      } else if (a is UserModel) {
+                        timeA = _userLastMessageTimes[a.uid] ?? Timestamp(0, 0);
+                      }
+
+                      if (b is GroupModel) {
+                        timeB = b.lastTimestamp;
+                      } else if (b is UserModel) {
+                        timeB = _userLastMessageTimes[b.uid] ?? Timestamp(0, 0);
+                      }
+
+                      // Descending order (newest first)
+                      int compare = timeB.compareTo(timeA);
+                      if (compare != 0) return compare;
+
+                      // Fallback if timestamps are equal or zero
+                      String nameA =
+                          a is GroupModel ? a.name : (a as UserModel).username;
+                      String nameB =
+                          b is GroupModel ? b.name : (b as UserModel).username;
+                      return nameA.compareTo(nameB);
+                    });
+
+                    if (filtered.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _searchQuery.isEmpty
+                                  ? Icons.chat_bubble_outline_rounded
+                                  : Icons.search_off_rounded,
+                              size: 56,
+                              color: const Color(0xFFE5E5E5),
                             ),
-                          ),
-                        );
+                            const SizedBox(height: 14),
+                            Text(
+                              _searchQuery.isEmpty
+                                  ? 'Belum ada obrolan'
+                                  : 'Tidak ada hasil',
+                              style: const TextStyle(
+                                color: Color(0xFF999999),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            if (_searchQuery.isEmpty) ...[
+                              const SizedBox(height: 6),
+                              const Text(
+                                'Gunakan tombol + untuk memulai',
+                                style: TextStyle(
+                                  color: Color(0xFFBBBBBB),
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) => const Divider(
+                        indent: 80,
+                        endIndent: 20,
+                      ),
+                      itemBuilder: (context, i) {
+                        final item = filtered[i];
+
+                        if (item is UserModel) {
+                          final roomId = ChatService.getRoomId(
+                              currentUid, item.uid);
+                          return UserTile(
+                            user: item,
+                            roomId: roomId,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ChatPage(
+                                    targetUser: item,
+                                    currentUid: currentUid,
+                                  ),
+                                ),
+                              );
+                            },
+                            onLongPress: () =>
+                                _showDeleteContactDialog(currentUid, item),
+                          );
+                        } else if (item is GroupModel) {
+                          return _GroupTile(
+                            group: item,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => GroupChatPage(
+                                    initialGroup: item,
+                                    currentUid: currentUid,
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }
+                        return const SizedBox.shrink();
                       },
-                      onLongPress: () =>
-                          _showDeleteContactDialog(currentUid, user),
                     );
                   },
                 );
@@ -571,6 +755,190 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Group Tile ────────────────────────────────────────────────────────
+class _GroupTile extends StatelessWidget {
+  final GroupModel group;
+  final VoidCallback onTap;
+
+  const _GroupTile({
+    required this.group,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      leading: Stack(
+        children: [
+          CircleAvatar(
+            radius: 26,
+            backgroundColor: AvatarHelper.backgroundColor(group.name),
+            backgroundImage:
+                group.photoUrl.isNotEmpty ? NetworkImage(group.photoUrl) : null,
+            child: group.photoUrl.isEmpty
+                ? Text(
+                    group.name.isNotEmpty ? group.name[0].toUpperCase() : '?',
+                    style: TextStyle(
+                      color: AvatarHelper.textColor(group.name),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                    ),
+                  )
+                : null,
+          ),
+          // Small badge indicating it's a group
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: const BoxDecoration(
+                color: Color(0xFF111111),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.group_rounded,
+                size: 10,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+      title: Text(
+        group.name,
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 16,
+          color: Color(0xFF111111),
+        ),
+      ),
+      subtitle: Text(
+        group.lastMessage.isEmpty ? 'Grup dibuat' : group.lastMessage,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: Color(0xFF999999),
+          fontSize: 14,
+        ),
+      ),
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            _formatTime(group.lastTimestamp.toDate()),
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFFBBBBBB),
+            ),
+          ),
+        ],
+      ),
+      onTap: onTap,
+    );
+  }
+
+  String _formatTime(DateTime date) {
+    final now = DateTime.now();
+    if (date.year == now.year && date.month == now.month && date.day == now.day) {
+      return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    }
+    return '${date.day}/${date.month}';
+  }
+}
+
+// ── Bottom Navigation Bar ─────────────────────────────────────────────
+class _BottomNavBar extends StatelessWidget {
+  final VoidCallback onPhoneTap;
+  final VoidCallback onProfileTap;
+
+  const _BottomNavBar({
+    required this.onPhoneTap,
+    required this.onProfileTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(80, 0, 80, 28),
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF111111),
+        borderRadius: BorderRadius.circular(40),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          GestureDetector(
+            onTap: onPhoneTap,
+            behavior: HitTestBehavior.opaque,
+            child: Icon(Icons.phone_outlined,
+                color: Colors.white.withValues(alpha: 0.45), size: 22),
+          ),
+          const Icon(Icons.chat_bubble_rounded,
+              color: Colors.white, size: 22),
+          GestureDetector(
+            onTap: onProfileTap,
+            behavior: HitTestBehavior.opaque,
+            child: Icon(Icons.person_outline_rounded,
+                color: Colors.white.withValues(alpha: 0.45), size: 22),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Bottom Sheet Menu Option ──────────────────────────────────────────
+class _MenuOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _MenuOption({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+      leading: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F5F5),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Icon(icon, color: const Color(0xFF111111), size: 22),
+      ),
+      title: Text(
+        label,
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 15,
+          color: Color(0xFF111111),
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(
+          fontSize: 12,
+          color: Color(0xFF999999),
+        ),
+      ),
+      onTap: onTap,
     );
   }
 }

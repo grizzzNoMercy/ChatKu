@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 
 class PresenceWidget extends StatelessWidget {
@@ -22,13 +21,13 @@ class PresenceWidget extends StatelessWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _PulsingDot(color: const Color(0xFF6C63FF)),
+          _PulsingDot(color: const Color(0xFF111111)),
           const SizedBox(width: 4),
           const Text(
             'Sedang melihat chat',
             style: TextStyle(
               fontSize: 12,
-              color: Color(0xFF6C63FF),
+              color: Color(0xFF111111),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -45,7 +44,7 @@ class PresenceWidget extends StatelessWidget {
             width: 7,
             height: 7,
             decoration: const BoxDecoration(
-              color: Color(0xFF48BB78),
+              color: Color(0xFF34C759),
               shape: BoxShape.circle,
             ),
           ),
@@ -54,7 +53,7 @@ class PresenceWidget extends StatelessWidget {
             'Online',
             style: TextStyle(
               fontSize: 12,
-              color: Color(0xFF48BB78),
+              color: Color(0xFF34C759),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -74,9 +73,9 @@ class PresenceWidget extends StatelessWidget {
 
     return Text(
       lastSeenText,
-      style: TextStyle(
+      style: const TextStyle(
         fontSize: 12,
-        color: Colors.grey[500],
+        color: Color(0xFF999999),
       ),
     );
   }
