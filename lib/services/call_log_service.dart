@@ -47,26 +47,38 @@ class CallLogService {
     return _firestore
         .collection(_collection)
         .where('participants', arrayContains: currentUid)
-        .orderBy('timestamp', descending: true)
-        .limit(100)
         .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => CallLogModel.fromMap(d.id, d.data()))
-            .toList());
+        .map((snap) {
+          final list = snap.docs
+              .map((d) => CallLogModel.fromMap(d.id, d.data()))
+              .toList();
+          // Sort client-side (newest first) to avoid requiring a composite index in Firestore
+          list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+          return list.take(100).toList();
+        });
   }
 
   /// Count of missed calls for [currentUid] since [since].
   static Stream<int> missedCallCountStream(
       String currentUid, DateTime since) {
-    final sinceTs = Timestamp.fromDate(since);
     return _firestore
         .collection(_collection)
         .where('participants', arrayContains: currentUid)
-        .where('receiverId', isEqualTo: currentUid)
-        .where('status', isEqualTo: 'missed')
-        .where('timestamp', isGreaterThan: sinceTs)
         .snapshots()
-        .map((s) => s.docs.length);
+        .map((snap) {
+          final sinceTs = Timestamp.fromDate(since);
+          return snap.docs.where((doc) {
+            final data = doc.data();
+            final receiverId = data['receiverId'] as String? ?? '';
+            final status = data['status'] as String? ?? '';
+            final ts = data['timestamp'] as Timestamp?;
+            
+            return receiverId == currentUid &&
+                status == 'missed' &&
+                ts != null &&
+                ts.compareTo(sinceTs) > 0;
+          }).length;
+        });
   }
 
   /// Delete a single log entry.
