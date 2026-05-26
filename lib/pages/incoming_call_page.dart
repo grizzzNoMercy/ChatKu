@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/call_service.dart';
+import '../services/sound_service.dart';
 import 'call_page.dart';
 
 class IncomingCallPage extends StatefulWidget {
@@ -33,15 +34,20 @@ class _IncomingCallPageState extends State<IncomingCallPage>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
+
+    // Play ringtone when incoming call page opens
+    SoundService.instance.playRingtone();
   }
 
   @override
   void dispose() {
+    SoundService.instance.stopRingtone();
     _pulseController.dispose();
     super.dispose();
   }
 
   void _accept() {
+    SoundService.instance.stopRingtone();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -58,6 +64,7 @@ class _IncomingCallPageState extends State<IncomingCallPage>
   }
 
   void _reject() async {
+    await SoundService.instance.stopRingtone();
     await CallService.rejectCall(widget.callId);
     if (mounted) Navigator.pop(context);
   }
