@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'call_log_service.dart';
 
 class CallService {
   static final _firestore = FirebaseFirestore.instance;
@@ -17,6 +18,18 @@ class CallService {
   String? _currentCallId;
   StreamSubscription? _candidateSub;
   StreamSubscription? _statusSub;
+
+  // For call log
+  String? _callerId;
+  String? _callerName;
+  String? _callerPhotoUrl;
+  String? _receiverId;
+  String? _receiverName;
+  String? _receiverPhotoUrl;
+  bool? _isVideo;
+  bool _wasAnswered = false;
+  DateTime? _answerTime;
+  bool _logSaved = false;
 
   // Callbacks
   Function(MediaStream)? onLocalStream;
@@ -60,6 +73,17 @@ class CallService {
     final offer = await _pc!.createOffer();
     await _pc!.setLocalDescription(offer);
 
+    // Track metadata for log
+    _callerId = callerId;
+    _callerName = callerName;
+    _callerPhotoUrl = callerPhotoUrl;
+    _receiverId = receiverId;
+    _receiverName = receiverName;
+    _isVideo = isVideo;
+    _wasAnswered = false;
+    _answerTime = null;
+    _logSaved = false;
+
     await callRef.set({
       'callerId': callerId,
       'callerName': callerName,
@@ -81,6 +105,11 @@ class CallService {
       onCallStateChanged?.call(status);
 
       if (status == 'answered' && data['answer'] != null) {
+        if (!_wasAnswered) {
+          _wasAnswered = true;
+          _answerTime = DateTime.now();
+          _receiverPhotoUrl = data['receiverPhotoUrl'] as String? ?? '';
+        }
         final answer = RTCSessionDescription(
           data['answer']['sdp'],
           data['answer']['type'],
@@ -88,6 +117,7 @@ class CallService {
         await _pc?.setRemoteDescription(answer);
       }
       if (status == 'ended' || status == 'rejected') {
+        await _saveLog();
         await cleanup();
       }
     });
@@ -119,10 +149,28 @@ class CallService {
     required String callId,
     required String receiverUid,
     required bool isVideo,
+    String receiverName = '',
+    String receiverPhotoUrl = '',
   }) async {
     _currentCallId = callId;
+    _wasAnswered = true;
+    _answerTime = DateTime.now();
+    _isVideo = isVideo;
+    _logSaved = false;
     final callRef = _firestore.collection('calls').doc(callId);
     final callData = (await callRef.get()).data()!;
+
+    // Track metadata for receiver side
+    _callerId = callData['callerId'] as String? ?? '';
+    _callerName = callData['callerName'] as String? ?? '';
+    _callerPhotoUrl = callData['callerPhotoUrl'] as String? ?? '';
+    _receiverId = receiverUid;
+    _receiverName = receiverName.isNotEmpty
+        ? receiverName
+        : callData['receiverName'] as String? ?? '';
+    _receiverPhotoUrl = receiverPhotoUrl.isNotEmpty
+        ? receiverPhotoUrl
+        : callData['receiverPhotoUrl'] as String? ?? '';
 
     _localStream = await navigator.mediaDevices.getUserMedia({
       'audio': true,
@@ -163,7 +211,9 @@ class CallService {
     _statusSub = callRef.snapshots().listen((snap) {
       final status = snap.data()?['status'] as String? ?? '';
       onCallStateChanged?.call(status);
-      if (status == 'ended') cleanup();
+      if (status == 'ended') {
+        _saveLog().then((_) => cleanup());
+      }
     });
 
     // Listen remote candidates
@@ -191,6 +241,7 @@ class CallService {
           .doc(_currentCallId)
           .update({'status': 'ended'});
     }
+    await _saveLog();
     await cleanup();
   }
 
@@ -221,6 +272,29 @@ class CallService {
         .where('receiverId', isEqualTo: currentUid)
         .where('status', isEqualTo: 'ringing')
         .snapshots();
+  }
+
+  // ── Save call log ─────────────────────────────────────────────────────
+  Future<void> _saveLog() async {
+    if (_logSaved) return;
+    if (_callerId == null || _receiverId == null) return;
+    _logSaved = true;
+
+    final duration = (_wasAnswered && _answerTime != null)
+        ? DateTime.now().difference(_answerTime!).inSeconds
+        : 0;
+
+    await CallLogService.saveLog(
+      callerId: _callerId!,
+      callerName: _callerName ?? '',
+      callerPhotoUrl: _callerPhotoUrl ?? '',
+      receiverId: _receiverId!,
+      receiverName: _receiverName ?? '',
+      receiverPhotoUrl: _receiverPhotoUrl ?? '',
+      isVideo: _isVideo ?? false,
+      wasAnswered: _wasAnswered,
+      durationSeconds: duration,
+    );
   }
 
   // ── Cleanup ───────────────────────────────────────────────────────────

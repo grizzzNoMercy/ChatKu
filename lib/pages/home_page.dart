@@ -5,12 +5,14 @@ import 'package:provider/provider.dart';
 import '../models/group_model.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/call_log_service.dart';
 import '../services/call_service.dart';
 import '../services/chat_service.dart';
 import '../services/contact_service.dart';
 import '../services/group_service.dart';
 import '../utils/avatar_helper.dart';
 import '../widgets/user_tile.dart';
+import 'call_log_page.dart';
 import 'chat_page.dart';
 import 'create_group_page.dart';
 import 'friend_requests_page.dart';
@@ -173,12 +175,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _showComingSoon() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Segera hadir'),
-        behavior: SnackBarBehavior.floating,
-      ),
+  void _openCallLog() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CallLogPage()),
     );
   }
 
@@ -554,12 +554,21 @@ class _HomePageState extends State<HomePage> {
         onPressed: () => _showNewChatMenu(currentUid),
         child: const Icon(Icons.add_rounded, size: 28),
       ),
-      bottomNavigationBar: _BottomNavBar(
-        onPhoneTap: _showComingSoon,
-        onProfileTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ProfilePage()),
+      bottomNavigationBar: StreamBuilder<int>(
+        stream: CallLogService.missedCallCountStream(
+          currentUid,
+          DateTime.now().subtract(const Duration(days: 7)),
+        ),
+        builder: (context, missedSnap) {
+          return _BottomNavBar(
+            missedCallCount: missedSnap.data ?? 0,
+            onPhoneTap: _openCallLog,
+            onProfileTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfilePage()),
+              );
+            },
           );
         },
       ),
@@ -857,10 +866,12 @@ class _GroupTile extends StatelessWidget {
 class _BottomNavBar extends StatelessWidget {
   final VoidCallback onPhoneTap;
   final VoidCallback onProfileTap;
+  final int missedCallCount;
 
   const _BottomNavBar({
     required this.onPhoneTap,
     required this.onProfileTap,
+    this.missedCallCount = 0,
   });
 
   @override
@@ -878,8 +889,20 @@ class _BottomNavBar extends StatelessWidget {
           GestureDetector(
             onTap: onPhoneTap,
             behavior: HitTestBehavior.opaque,
-            child: Icon(Icons.phone_outlined,
-                color: Colors.white.withValues(alpha: 0.45), size: 22),
+            child: Badge(
+              isLabelVisible: missedCallCount > 0,
+              backgroundColor: const Color(0xFFFF3B30),
+              label: Text(
+                '$missedCallCount',
+                style:
+                    const TextStyle(fontSize: 9, color: Colors.white),
+              ),
+              child: Icon(
+                Icons.phone_outlined,
+                color: Colors.white.withValues(alpha: 0.45),
+                size: 22,
+              ),
+            ),
           ),
           const Icon(Icons.chat_bubble_rounded,
               color: Colors.white, size: 22),
