@@ -28,19 +28,30 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final _searchController = TextEditingController();
-  String _searchQuery = '';
+  late final PageController _pageController;
+  int _currentPage = 1;
   StreamSubscription<QuerySnapshot>? _callSub;
   String? _handlingCallId;
-  Map<String, Timestamp> _userLastMessageTimes = {};
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: 1);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _listenForIncomingCalls();
-      _fetchUserLastMessages();
     });
+  }
+
+  void _onPageChanged(int index) {
+    setState(() => _currentPage = index);
+  }
+
+  void _goToPage(int index) {
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   void _listenForIncomingCalls() {
@@ -69,33 +80,10 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> _fetchUserLastMessages() async {
-    final currentUid = context.read<AuthService>().currentUid;
-    if (currentUid == null) return;
-
-    FirebaseFirestore.instance
-        .collection('chat_rooms')
-        .where('participants', arrayContains: currentUid)
-        .snapshots()
-        .listen((snap) {
-      if (!mounted) return;
-      final newTimes = <String, Timestamp>{};
-      for (var doc in snap.docs) {
-        final participants = List<String>.from(doc['participants'] ?? []);
-        participants.remove(currentUid);
-        if (participants.isNotEmpty) {
-          newTimes[participants.first] =
-              doc['lastTimestamp'] ?? Timestamp(0, 0);
-        }
-      }
-      setState(() => _userLastMessageTimes = newTimes);
-    });
-  }
-
   @override
   void dispose() {
     _callSub?.cancel();
-    _searchController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -175,12 +163,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _openCallLog() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const CallLogPage()),
-    );
-  }
+
 
   // ── Add Contact Dialog ──────────────────────────────────────────────
   void _showAddContactDialog(String currentUid) {
@@ -511,49 +494,26 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final currentUid = context.read<AuthService>().currentUid ?? '';
+    final titles = ['Panggilan', 'ChatKu', 'Profil'];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ChatKu'),
+        title: Text(titles[_currentPage]),
         actions: [
-          StreamBuilder<int>(
-            stream: ContactService.pendingRequestCountStream(currentUid),
-            builder: (context, snapshot) {
-              final count = snapshot.data ?? 0;
-              return IconButton(
-                icon: Badge(
-                  isLabelVisible: count > 0,
-                  backgroundColor: const Color(0xFF111111),
-                  label: Text(
-                    '$count',
-                    style: const TextStyle(
-                        fontSize: 10, color: Colors.white),
-                  ),
-                  child: const Icon(Icons.people_outline_rounded),
-                ),
-                tooltip: 'Permintaan Pertemanan',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const FriendRequestsPage()),
-                  );
-                },
-              );
-            },
-          ),
-          const SizedBox(width: 4),
+          if (_currentPage == 1) ..._chatActions(currentUid),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF111111),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        highlightElevation: 0,
-        shape: const CircleBorder(),
-        onPressed: () => _showNewChatMenu(currentUid),
-        child: const Icon(Icons.add_rounded, size: 28),
-      ),
+      floatingActionButton: _currentPage == 1
+          ? FloatingActionButton(
+              backgroundColor: const Color(0xFF111111),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              highlightElevation: 0,
+              shape: const CircleBorder(),
+              onPressed: () => _showNewChatMenu(currentUid),
+              child: const Icon(Icons.add_rounded, size: 28),
+            )
+          : null,
       bottomNavigationBar: StreamBuilder<int>(
         stream: CallLogService.missedCallCountStream(
           currentUid,
@@ -561,210 +521,58 @@ class _HomePageState extends State<HomePage> {
         ),
         builder: (context, missedSnap) {
           return _BottomNavBar(
+            currentIndex: _currentPage,
             missedCallCount: missedSnap.data ?? 0,
-            onPhoneTap: _openCallLog,
-            onProfileTap: () {
+            onTap: _goToPage,
+          );
+        },
+      ),
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: _onPageChanged,
+        children: [
+          const CallLogPage(),
+          _ChatTab(
+            currentUid: currentUid,
+            onShowNewChatMenu: () => _showNewChatMenu(currentUid),
+            onShowAddContact: () => _showAddContactDialog(currentUid),
+            onDeleteContact: (u) => _showDeleteContactDialog(currentUid, u),
+          ),
+          const ProfilePage(),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _chatActions(String currentUid) {
+    return [
+      StreamBuilder<int>(
+        stream: ContactService.pendingRequestCountStream(currentUid),
+        builder: (context, snapshot) {
+          final count = snapshot.data ?? 0;
+          return IconButton(
+            icon: Badge(
+              isLabelVisible: count > 0,
+              backgroundColor: const Color(0xFF111111),
+              label: Text(
+                '$count',
+                style: const TextStyle(fontSize: 10, color: Colors.white),
+              ),
+              child: const Icon(Icons.people_outline_rounded),
+            ),
+            tooltip: 'Permintaan Pertemanan',
+            onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const ProfilePage()),
+                MaterialPageRoute(
+                    builder: (_) => const FriendRequestsPage()),
               );
             },
           );
         },
       ),
-      body: Column(
-        children: [
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (v) =>
-                  setState(() => _searchQuery = v.toLowerCase()),
-              decoration: InputDecoration(
-                hintText: 'Cari kontak atau grup...',
-                hintStyle: const TextStyle(
-                    color: Color(0xFF999999), fontSize: 14),
-                prefixIcon: const Icon(Icons.search_rounded,
-                    size: 20, color: Color(0xFF999999)),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_rounded,
-                            size: 18, color: Color(0xFF999999)),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _searchQuery = '');
-                        },
-                      )
-                    : null,
-              ),
-            ),
-          ),
-          // Chat list
-          Expanded(
-            child: StreamBuilder<List<UserModel>>(
-              stream: ContactService.contactsStream(currentUid),
-              builder: (context, userSnap) {
-                return StreamBuilder<List<GroupModel>>(
-                  stream: GroupService.userGroupsStream(currentUid),
-                  builder: (context, groupSnap) {
-                    if (userSnap.connectionState == ConnectionState.waiting &&
-                        groupSnap.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFF111111),
-                          strokeWidth: 2,
-                        ),
-                      );
-                    }
-
-                    final users = userSnap.data ?? [];
-                    final groups = groupSnap.data ?? [];
-
-                    List<dynamic> mixedList = [];
-                    mixedList.addAll(users);
-                    mixedList.addAll(groups);
-
-                    final filtered = _searchQuery.isEmpty
-                        ? mixedList
-                        : mixedList.where((item) {
-                            if (item is UserModel) {
-                              return item.username
-                                      .toLowerCase()
-                                      .contains(_searchQuery) ||
-                                  item.email
-                                      .toLowerCase()
-                                      .contains(_searchQuery);
-                            } else if (item is GroupModel) {
-                              return item.name
-                                  .toLowerCase()
-                                  .contains(_searchQuery);
-                            }
-                            return false;
-                          }).toList();
-
-                    filtered.sort((a, b) {
-                      Timestamp timeA = Timestamp(0, 0);
-                      Timestamp timeB = Timestamp(0, 0);
-
-                      if (a is GroupModel) {
-                        timeA = a.lastTimestamp;
-                      } else if (a is UserModel) {
-                        timeA = _userLastMessageTimes[a.uid] ?? Timestamp(0, 0);
-                      }
-
-                      if (b is GroupModel) {
-                        timeB = b.lastTimestamp;
-                      } else if (b is UserModel) {
-                        timeB = _userLastMessageTimes[b.uid] ?? Timestamp(0, 0);
-                      }
-
-                      // Descending order (newest first)
-                      int compare = timeB.compareTo(timeA);
-                      if (compare != 0) return compare;
-
-                      // Fallback if timestamps are equal or zero
-                      String nameA =
-                          a is GroupModel ? a.name : (a as UserModel).username;
-                      String nameB =
-                          b is GroupModel ? b.name : (b as UserModel).username;
-                      return nameA.compareTo(nameB);
-                    });
-
-                    if (filtered.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _searchQuery.isEmpty
-                                  ? Icons.chat_bubble_outline_rounded
-                                  : Icons.search_off_rounded,
-                              size: 56,
-                              color: const Color(0xFFE5E5E5),
-                            ),
-                            const SizedBox(height: 14),
-                            Text(
-                              _searchQuery.isEmpty
-                                  ? 'Belum ada obrolan'
-                                  : 'Tidak ada hasil',
-                              style: const TextStyle(
-                                color: Color(0xFF999999),
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            if (_searchQuery.isEmpty) ...[
-                              const SizedBox(height: 6),
-                              const Text(
-                                'Gunakan tombol + untuk memulai',
-                                style: TextStyle(
-                                  color: Color(0xFFBBBBBB),
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      );
-                    }
-
-                    return ListView.separated(
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, __) => const Divider(
-                        indent: 80,
-                        endIndent: 20,
-                      ),
-                      itemBuilder: (context, i) {
-                        final item = filtered[i];
-
-                        if (item is UserModel) {
-                          final roomId = ChatService.getRoomId(
-                              currentUid, item.uid);
-                          return UserTile(
-                            user: item,
-                            roomId: roomId,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ChatPage(
-                                    targetUser: item,
-                                    currentUid: currentUid,
-                                  ),
-                                ),
-                              );
-                            },
-                            onLongPress: () =>
-                                _showDeleteContactDialog(currentUid, item),
-                          );
-                        } else if (item is GroupModel) {
-                          return _GroupTile(
-                            group: item,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => GroupChatPage(
-                                    initialGroup: item,
-                                    currentUid: currentUid,
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
+      const SizedBox(width: 4),
+    ];
   }
 }
 
@@ -864,13 +672,13 @@ class _GroupTile extends StatelessWidget {
 
 // ── Bottom Navigation Bar ─────────────────────────────────────────────
 class _BottomNavBar extends StatelessWidget {
-  final VoidCallback onPhoneTap;
-  final VoidCallback onProfileTap;
+  final int currentIndex;
   final int missedCallCount;
+  final ValueChanged<int> onTap;
 
   const _BottomNavBar({
-    required this.onPhoneTap,
-    required this.onProfileTap,
+    required this.currentIndex,
+    required this.onTap,
     this.missedCallCount = 0,
   });
 
@@ -886,31 +694,51 @@ class _BottomNavBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
+          // Phone tab
           GestureDetector(
-            onTap: onPhoneTap,
+            onTap: () => onTap(0),
             behavior: HitTestBehavior.opaque,
             child: Badge(
               isLabelVisible: missedCallCount > 0,
               backgroundColor: const Color(0xFFFF3B30),
-              label: Text(
-                '$missedCallCount',
-                style:
-                    const TextStyle(fontSize: 9, color: Colors.white),
-              ),
+              label: Text('$missedCallCount',
+                  style: const TextStyle(fontSize: 9, color: Colors.white)),
               child: Icon(
-                Icons.phone_outlined,
-                color: Colors.white.withValues(alpha: 0.45),
+                currentIndex == 0 ? Icons.phone_rounded : Icons.phone_outlined,
+                color: currentIndex == 0
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.45),
                 size: 22,
               ),
             ),
           ),
-          const Icon(Icons.chat_bubble_rounded,
-              color: Colors.white, size: 22),
+          // Chat tab
           GestureDetector(
-            onTap: onProfileTap,
+            onTap: () => onTap(1),
             behavior: HitTestBehavior.opaque,
-            child: Icon(Icons.person_outline_rounded,
-                color: Colors.white.withValues(alpha: 0.45), size: 22),
+            child: Icon(
+              currentIndex == 1
+                  ? Icons.chat_bubble_rounded
+                  : Icons.chat_bubble_outline_rounded,
+              color: currentIndex == 1
+                  ? Colors.white
+                  : Colors.white.withValues(alpha: 0.45),
+              size: 22,
+            ),
+          ),
+          // Profile tab
+          GestureDetector(
+            onTap: () => onTap(2),
+            behavior: HitTestBehavior.opaque,
+            child: Icon(
+              currentIndex == 2
+                  ? Icons.person_rounded
+                  : Icons.person_outline_rounded,
+              color: currentIndex == 2
+                  ? Colors.white
+                  : Colors.white.withValues(alpha: 0.45),
+              size: 22,
+            ),
           ),
         ],
       ),
@@ -962,6 +790,251 @@ class _MenuOption extends StatelessWidget {
         ),
       ),
       onTap: onTap,
+    );
+  }
+}
+
+// ── Chat Tab (dengan state preservation) ─────────────────────────────────
+class _ChatTab extends StatefulWidget {
+  final String currentUid;
+  final VoidCallback onShowNewChatMenu;
+  final VoidCallback onShowAddContact;
+  final void Function(UserModel) onDeleteContact;
+
+  const _ChatTab({
+    required this.currentUid,
+    required this.onShowNewChatMenu,
+    required this.onShowAddContact,
+    required this.onDeleteContact,
+  });
+
+  @override
+  State<_ChatTab> createState() => _ChatTabState();
+}
+
+class _ChatTabState extends State<_ChatTab>
+    with AutomaticKeepAliveClientMixin {
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+  Map<String, Timestamp> _userLastMessageTimes = {};
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserLastMessages();
+  }
+
+  void _fetchUserLastMessages() {
+    FirebaseFirestore.instance
+        .collection('chat_rooms')
+        .where('participants', arrayContains: widget.currentUid)
+        .snapshots()
+        .listen((snap) {
+      if (!mounted) return;
+      final newTimes = <String, Timestamp>{};
+      for (var doc in snap.docs) {
+        final participants = List<String>.from(doc['participants'] ?? []);
+        participants.remove(widget.currentUid);
+        if (participants.isNotEmpty) {
+          newTimes[participants.first] =
+              doc['lastTimestamp'] ?? Timestamp(0, 0);
+        }
+      }
+      setState(() => _userLastMessageTimes = newTimes);
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final currentUid = widget.currentUid;
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+          child: TextField(
+            controller: _searchController,
+            onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+            decoration: InputDecoration(
+              hintText: 'Cari kontak atau grup...',
+              hintStyle: const TextStyle(color: Color(0xFF999999), fontSize: 14),
+              prefixIcon: const Icon(Icons.search_rounded,
+                  size: 20, color: Color(0xFF999999)),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_rounded,
+                          size: 18, color: Color(0xFF999999)),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                    )
+                  : null,
+            ),
+          ),
+        ),
+        Expanded(
+          child: StreamBuilder<List<UserModel>>(
+            stream: ContactService.contactsStream(currentUid),
+            builder: (context, userSnap) {
+              return StreamBuilder<List<GroupModel>>(
+                stream: GroupService.userGroupsStream(currentUid),
+                builder: (context, groupSnap) {
+                  if (userSnap.connectionState == ConnectionState.waiting &&
+                      groupSnap.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF111111),
+                        strokeWidth: 2,
+                      ),
+                    );
+                  }
+
+                  final users = userSnap.data ?? [];
+                  final groups = groupSnap.data ?? [];
+                  List<dynamic> mixedList = [...users, ...groups];
+
+                  final filtered = _searchQuery.isEmpty
+                      ? mixedList
+                      : mixedList.where((item) {
+                          if (item is UserModel) {
+                            return item.username
+                                    .toLowerCase()
+                                    .contains(_searchQuery) ||
+                                item.email
+                                    .toLowerCase()
+                                    .contains(_searchQuery);
+                          } else if (item is GroupModel) {
+                            return item.name
+                                .toLowerCase()
+                                .contains(_searchQuery);
+                          }
+                          return false;
+                        }).toList();
+
+                  filtered.sort((a, b) {
+                    Timestamp timeA = Timestamp(0, 0);
+                    Timestamp timeB = Timestamp(0, 0);
+                    if (a is GroupModel) {
+                      timeA = a.lastTimestamp;
+                    } else if (a is UserModel) {
+                      timeA = _userLastMessageTimes[a.uid] ?? Timestamp(0, 0);
+                    }
+                    if (b is GroupModel) {
+                      timeB = b.lastTimestamp;
+                    } else if (b is UserModel) {
+                      timeB = _userLastMessageTimes[b.uid] ?? Timestamp(0, 0);
+                    }
+                    final cmp = timeB.compareTo(timeA);
+                    if (cmp != 0) return cmp;
+                    final nameA =
+                        a is GroupModel ? a.name : (a as UserModel).username;
+                    final nameB =
+                        b is GroupModel ? b.name : (b as UserModel).username;
+                    return nameA.compareTo(nameB);
+                  });
+
+                  if (filtered.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _searchQuery.isEmpty
+                                ? Icons.chat_bubble_outline_rounded
+                                : Icons.search_off_rounded,
+                            size: 56,
+                            color: const Color(0xFFE5E5E5),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            _searchQuery.isEmpty
+                                ? 'Belum ada obrolan'
+                                : 'Tidak ada hasil',
+                            style: const TextStyle(
+                              color: Color(0xFF999999),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          if (_searchQuery.isEmpty) ...[
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Gunakan tombol + untuk memulai',
+                              style: TextStyle(
+                                color: Color(0xFFBBBBBB),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, __) => const Divider(
+                      indent: 80,
+                      endIndent: 20,
+                    ),
+                    itemBuilder: (context, i) {
+                      final item = filtered[i];
+                      if (item is UserModel) {
+                        final roomId =
+                            ChatService.getRoomId(currentUid, item.uid);
+                        return UserTile(
+                          user: item,
+                          roomId: roomId,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ChatPage(
+                                  targetUser: item,
+                                  currentUid: currentUid,
+                                ),
+                              ),
+                            );
+                          },
+                          onLongPress: () =>
+                              widget.onDeleteContact(item),
+                        );
+                      } else if (item is GroupModel) {
+                        return _GroupTile(
+                          group: item,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => GroupChatPage(
+                                  initialGroup: item,
+                                  currentUid: currentUid,
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
