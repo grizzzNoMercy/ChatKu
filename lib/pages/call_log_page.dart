@@ -18,6 +18,7 @@ class CallLogPage extends StatelessWidget {
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: const Text(
           'Log Panggilan',
           style: TextStyle(
@@ -75,6 +76,30 @@ class CallLogPage extends StatelessWidget {
               child: CircularProgressIndicator(
                 color: Color(0xFF111111),
                 strokeWidth: 2,
+              ),
+            );
+          }
+
+          if (snap.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline_rounded,
+                        size: 48, color: Color(0xFFFF3B30)),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Gagal memuat log: ${snap.error}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFF999999),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           }

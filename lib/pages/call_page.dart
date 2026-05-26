@@ -129,7 +129,8 @@ class _CallPageState extends State<CallPage> {
   void dispose() {
     _disposed = true;
     _timer?.cancel();
-    _callService.cleanup();
+    // Use endCall to ensure log is saved before cleanup
+    _callService.endCall();
     _localRenderer.dispose();
     _remoteRenderer.dispose();
     super.dispose();
