@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/call_log_model.dart';
 
 class CallLogService {
@@ -18,11 +19,9 @@ class CallLogService {
     required bool wasAnswered,
     required int durationSeconds,
   }) async {
-    final batch = _firestore.batch();
-    final ref = _firestore.collection(_collection).doc();
+    debugPrint('[CallLogService] saveLog called: caller=$callerId, receiver=$receiverId, answered=$wasAnswered');
 
-    // Outgoing log (from caller's perspective)
-    final outgoingData = CallLogModel(
+    final data = CallLogModel(
       id: '',
       callerId: callerId,
       callerName: callerName,
@@ -36,10 +35,13 @@ class CallLogService {
       timestamp: Timestamp.now(),
     ).toMap();
 
-    // We store ONE document per call with both sides' info.
-    // Each user queries where participants arrayContains their uid.
-    batch.set(ref, outgoingData);
-    await batch.commit();
+    try {
+      await _firestore.collection(_collection).add(data);
+      debugPrint('[CallLogService] Log saved to Firestore successfully');
+    } catch (e) {
+      debugPrint('[CallLogService] ERROR saving log: $e');
+      rethrow;
+    }
   }
 
   /// Stream of call logs for [currentUid], newest first.
@@ -47,12 +49,16 @@ class CallLogService {
     return _firestore
         .collection(_collection)
         .where('participants', arrayContains: currentUid)
-        .orderBy('timestamp', descending: true)
         .limit(100)
         .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => CallLogModel.fromMap(d.id, d.data()))
-            .toList());
+        .map((snap) {
+      final logs = snap.docs
+          .map((d) => CallLogModel.fromMap(d.id, d.data()))
+          .toList();
+      // Sort client-side to avoid needing a composite Firestore index
+      logs.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      return logs;
+    });
   }
 
   /// Count of missed calls for [currentUid] since [since].
@@ -62,11 +68,15 @@ class CallLogService {
     return _firestore
         .collection(_collection)
         .where('participants', arrayContains: currentUid)
-        .where('receiverId', isEqualTo: currentUid)
-        .where('status', isEqualTo: 'missed')
-        .where('timestamp', isGreaterThan: sinceTs)
         .snapshots()
-        .map((s) => s.docs.length);
+        .map((s) => s.docs.where((doc) {
+              final data = doc.data();
+              return data['receiverId'] == currentUid &&
+                  data['status'] == 'missed' &&
+                  (data['timestamp'] as Timestamp?)
+                          ?.compareTo(sinceTs) ==
+                      1;
+            }).length);
   }
 
   /// Delete a single log entry.

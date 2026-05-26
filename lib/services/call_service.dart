@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'call_log_service.dart';
 
@@ -208,11 +209,12 @@ class CallService {
     });
 
     // Listen status
-    _statusSub = callRef.snapshots().listen((snap) {
+    _statusSub = callRef.snapshots().listen((snap) async {
       final status = snap.data()?['status'] as String? ?? '';
       onCallStateChanged?.call(status);
       if (status == 'ended') {
-        _saveLog().then((_) => cleanup());
+        await _saveLog();
+        await cleanup();
       }
     });
 
@@ -277,24 +279,33 @@ class CallService {
   // ── Save call log ─────────────────────────────────────────────────────
   Future<void> _saveLog() async {
     if (_logSaved) return;
-    if (_callerId == null || _receiverId == null) return;
+    if (_callerId == null || _receiverId == null) {
+      debugPrint('[CallService] _saveLog skipped: callerId=$_callerId, receiverId=$_receiverId');
+      return;
+    }
     _logSaved = true;
 
     final duration = (_wasAnswered && _answerTime != null)
         ? DateTime.now().difference(_answerTime!).inSeconds
         : 0;
 
-    await CallLogService.saveLog(
-      callerId: _callerId!,
-      callerName: _callerName ?? '',
-      callerPhotoUrl: _callerPhotoUrl ?? '',
-      receiverId: _receiverId!,
-      receiverName: _receiverName ?? '',
-      receiverPhotoUrl: _receiverPhotoUrl ?? '',
-      isVideo: _isVideo ?? false,
-      wasAnswered: _wasAnswered,
-      durationSeconds: duration,
-    );
+    try {
+      await CallLogService.saveLog(
+        callerId: _callerId!,
+        callerName: _callerName ?? '',
+        callerPhotoUrl: _callerPhotoUrl ?? '',
+        receiverId: _receiverId!,
+        receiverName: _receiverName ?? '',
+        receiverPhotoUrl: _receiverPhotoUrl ?? '',
+        isVideo: _isVideo ?? false,
+        wasAnswered: _wasAnswered,
+        durationSeconds: duration,
+      );
+      debugPrint('[CallService] Call log saved successfully');
+    } catch (e) {
+      debugPrint('[CallService] Failed to save call log: $e');
+      _logSaved = false; // Allow retry
+    }
   }
 
   // ── Cleanup ───────────────────────────────────────────────────────────
