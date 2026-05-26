@@ -17,6 +17,8 @@ import 'friend_requests_page.dart';
 import 'group_chat_page.dart';
 import 'incoming_call_page.dart';
 import 'profile_page.dart';
+import '../services/sound_service.dart';
+import '../services/presence_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -29,6 +31,8 @@ class _HomePageState extends State<HomePage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   StreamSubscription<QuerySnapshot>? _callSub;
+  StreamSubscription<QuerySnapshot>? _roomsSub;
+  StreamSubscription<QuerySnapshot>? _groupsSub;
   String? _handlingCallId;
   Map<String, Timestamp> _userLastMessageTimes = {};
 
@@ -38,6 +42,82 @@ class _HomePageState extends State<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _listenForIncomingCalls();
       _fetchUserLastMessages();
+      _listenForNewMessages();
+    });
+  }
+
+  void _listenForNewMessages() {
+    final currentUid = context.read<AuthService>().currentUid;
+    if (currentUid == null) return;
+
+    final presence = context.read<PresenceService>();
+
+    // Listen for new messages in Private Chats
+    bool isInitialRooms = true;
+    final Map<String, Timestamp> roomLastTimestamps = {};
+
+    _roomsSub = FirebaseFirestore.instance
+        .collection('chat_rooms')
+        .where('participants', arrayContains: currentUid)
+        .snapshots()
+        .listen((snap) {
+      if (!mounted) return;
+
+      for (var doc in snap.docs) {
+        final roomId = doc.id;
+        final lastTs = doc.data()['lastTimestamp'] as Timestamp?;
+        final lastSenderId = doc.data()['lastSenderId'] as String?;
+
+        if (lastTs != null) {
+          if (!isInitialRooms) {
+            final oldTs = roomLastTimestamps[roomId];
+            if (oldTs == null || lastTs.compareTo(oldTs) > 0) {
+              if (lastSenderId != null && lastSenderId != currentUid) {
+                // If user is already looking at this specific room, skip home screen sound
+                if (presence.currentRoomId != roomId) {
+                  SoundService.instance.playNotification();
+                }
+              }
+            }
+          }
+          roomLastTimestamps[roomId] = lastTs;
+        }
+      }
+      isInitialRooms = false;
+    });
+
+    // Listen for new messages in Groups
+    bool isInitialGroups = true;
+    final Map<String, Timestamp> groupLastTimestamps = {};
+
+    _groupsSub = FirebaseFirestore.instance
+        .collection('groups')
+        .where('members', arrayContains: currentUid)
+        .snapshots()
+        .listen((snap) {
+      if (!mounted) return;
+
+      for (var doc in snap.docs) {
+        final groupId = doc.id;
+        final lastTs = doc.data()['lastTimestamp'] as Timestamp?;
+        final lastSenderId = doc.data()['lastSenderId'] as String?;
+
+        if (lastTs != null) {
+          if (!isInitialGroups) {
+            final oldTs = groupLastTimestamps[groupId];
+            if (oldTs == null || lastTs.compareTo(oldTs) > 0) {
+              if (lastSenderId != null && lastSenderId != currentUid) {
+                // If user is already looking at this specific group room, skip home screen sound
+                if (presence.currentRoomId != groupId) {
+                  SoundService.instance.playNotification();
+                }
+              }
+            }
+          }
+          groupLastTimestamps[groupId] = lastTs;
+        }
+      }
+      isInitialGroups = false;
     });
   }
 
@@ -93,6 +173,8 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _callSub?.cancel();
+    _roomsSub?.cancel();
+    _groupsSub?.cancel();
     _searchController.dispose();
     super.dispose();
   }

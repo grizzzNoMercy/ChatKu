@@ -26,6 +26,7 @@ dependencies:
   url_launcher: ^6.2.5
   jitsi_meet_flutter_sdk: ^10.0.0  # ← tambahkan 2 spasi di depan
   flutter_webrtc: ^0.12.4
+  audioplayers: ^6.1.0
 
 dev_dependencies:
   flutter_test:
@@ -36,3 +37,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/audio/

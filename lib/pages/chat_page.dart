@@ -8,6 +8,7 @@ import '../models/message_model.dart';
 import '../services/auth_service.dart';
 import '../services/chat_service.dart';
 import '../services/presence_service.dart';
+import '../services/sound_service.dart';
 import '../utils/avatar_helper.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/presence_widget.dart';
@@ -33,6 +34,7 @@ class _ChatPageState extends State<ChatPage> {
   late final String _roomId;
   bool _sending = false;
   bool _showAttachMenu = false;
+  int _previousMessageCount = -1; // -1 means first load
 
   @override
   void initState() {
@@ -292,6 +294,17 @@ class _ChatPageState extends State<ChatPage> {
                   );
                 }
                 final messages = snapshot.data ?? [];
+
+                // Play notification sound for new incoming messages
+                if (_previousMessageCount >= 0 &&
+                    messages.length > _previousMessageCount) {
+                  final lastMsg = messages.last;
+                  if (lastMsg.senderId != widget.currentUid) {
+                    SoundService.instance.playNotification();
+                  }
+                }
+                _previousMessageCount = messages.length;
+
                 if (messages.isNotEmpty) {
                   _scrollToBottom();
                 }
