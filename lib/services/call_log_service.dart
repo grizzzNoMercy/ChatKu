@@ -60,7 +60,7 @@ class CallLogService {
         });
   }
 
-  /// Count of missed calls for [currentUid] since [since].
+  /// Count of missed calls for [currentUid] since [since] that are unread.
   static Stream<int> missedCallCountStream(
       String currentUid, DateTime since) {
     return _firestore
@@ -74,13 +74,36 @@ class CallLogService {
             final receiverId = data['receiverId'] as String? ?? '';
             final status = data['status'] as String? ?? '';
             final ts = data['timestamp'] as Timestamp?;
+            final isRead = data['isRead'] as bool? ?? false;
             
             return receiverId == currentUid &&
                 status == 'missed' &&
+                !isRead &&
                 ts != null &&
                 ts.compareTo(sinceTs) > 0;
           }).length;
         });
+  }
+
+  /// Mark all missed calls for [currentUid] as read.
+  static Future<void> markMissedCallsAsRead(String currentUid) async {
+    final snap = await _firestore
+        .collection(_collection)
+        .where('participants', arrayContains: currentUid)
+        .get();
+        
+    final batch = _firestore.batch();
+    bool hasUpdates = false;
+    for (final doc in snap.docs) {
+      final data = doc.data();
+      if (data['receiverId'] == currentUid && data['status'] == 'missed' && (data['isRead'] != true)) {
+        batch.update(doc.reference, {'isRead': true});
+        hasUpdates = true;
+      }
+    }
+    if (hasUpdates) {
+      await batch.commit();
+    }
   }
 
   /// Delete a single log entry.

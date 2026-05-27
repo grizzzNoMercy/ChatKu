@@ -124,6 +124,12 @@ class _HomePageState extends State<HomePage> {
 
   void _onPageChanged(int index) {
     setState(() => _currentPage = index);
+    if (index == 1) {
+      final currentUid = context.read<AuthService>().currentUid;
+      if (currentUid != null) {
+        CallLogService.markMissedCallsAsRead(currentUid);
+      }
+    }
   }
 
   void _goToPage(int index) {
