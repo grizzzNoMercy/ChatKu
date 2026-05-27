@@ -8,6 +8,8 @@ class PresenceService extends ChangeNotifier with WidgetsBindingObserver {
 
   String? _currentRoomId;
 
+  String? get currentRoomId => _currentRoomId;
+
   void init() {
     WidgetsBinding.instance.addObserver(this);
     _setOnline(true);

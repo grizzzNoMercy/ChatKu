@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import '../services/call_service.dart';
+import '../services/sound_service.dart';
 
 class CallPage extends StatefulWidget {
   final String currentUid;
@@ -67,14 +68,21 @@ class _CallPageState extends State<CallPage> {
     _callService.onCallStateChanged = (status) {
       if (_disposed) return;
       setState(() => _callStatus = status);
-      if (status == 'answered' && _timer == null) _startTimer();
+      if (status == 'answered') {
+        // Stop ringback tone when call is answered
+        SoundService.instance.stopRingback();
+        if (_timer == null) _startTimer();
+      }
       if (status == 'ended' || status == 'rejected') {
+        SoundService.instance.stopRingback();
         _timer?.cancel();
         if (mounted) Navigator.pop(context);
       }
     };
 
     if (widget.isCaller) {
+      // Play ringback tone while waiting for answer
+      SoundService.instance.playRingback();
       await _callService.startCall(
         callerId: widget.currentUid,
         callerName: widget.currentUserName ?? '',
@@ -121,6 +129,7 @@ class _CallPageState extends State<CallPage> {
   }
 
   Future<void> _endCall() async {
+    await SoundService.instance.stopRingback();
     await _callService.endCall();
     if (mounted) Navigator.pop(context);
   }
@@ -129,6 +138,7 @@ class _CallPageState extends State<CallPage> {
   void dispose() {
     _disposed = true;
     _timer?.cancel();
+    SoundService.instance.stopRingback();
     // Use endCall to ensure log is saved before cleanup
     _callService.endCall();
     _localRenderer.dispose();

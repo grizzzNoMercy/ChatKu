@@ -1,5 +1,8 @@
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../services/call_service.dart';
+import '../services/sound_service.dart';
 import 'call_page.dart';
 
 class IncomingCallPage extends StatefulWidget {
@@ -25,6 +28,7 @@ class IncomingCallPage extends StatefulWidget {
 class _IncomingCallPageState extends State<IncomingCallPage>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
+  StreamSubscription<DocumentSnapshot>? _callSubscription;
 
   @override
   void initState() {
@@ -33,15 +37,48 @@ class _IncomingCallPageState extends State<IncomingCallPage>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
+
+    // Play ringtone when incoming call page opens
+    SoundService.instance.playRingtone();
+
+    // Listen to call status changes
+    _callSubscription = FirebaseFirestore.instance
+        .collection('calls')
+        .doc(widget.callId)
+        .snapshots()
+        .listen((snapshot) {
+      if (!snapshot.exists) {
+        if (mounted) _closeIncomingCall();
+        return;
+      }
+
+      final data = snapshot.data();
+      if (data != null) {
+        final status = data['status'] as String?;
+        if (status == 'ended' || status == 'canceled' || status == 'rejected') {
+          if (mounted) _closeIncomingCall();
+        }
+      }
+    });
+  }
+
+  void _closeIncomingCall() {
+    SoundService.instance.stopRingtone();
+    if (mounted && Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
   }
 
   @override
   void dispose() {
+    _callSubscription?.cancel();
+    SoundService.instance.stopRingtone();
     _pulseController.dispose();
     super.dispose();
   }
 
   void _accept() {
+    SoundService.instance.stopRingtone();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -58,6 +95,7 @@ class _IncomingCallPageState extends State<IncomingCallPage>
   }
 
   void _reject() async {
+    await SoundService.instance.stopRingtone();
     await CallService.rejectCall(widget.callId);
     if (mounted) Navigator.pop(context);
   }
