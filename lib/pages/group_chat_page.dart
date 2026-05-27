@@ -31,10 +31,14 @@ class _GroupChatPageState extends State<GroupChatPage> {
   bool _showAttachMenu = false;
   Map<String, UserModel> _membersMap = {};
 
+  int _previousMessageCount = -1;
+
   @override
   void initState() {
     super.initState();
     _loadMembers();
+    // Mark as read when entering the room
+    GroupService.markGroupAsRead(widget.initialGroup.id, widget.currentUid);
   }
 
   Future<void> _loadMembers() async {
@@ -208,9 +212,21 @@ class _GroupChatPageState extends State<GroupChatPage> {
                   );
                 }
                 final messages = snapshot.data ?? [];
+
+                final bool hasNewMessages = _previousMessageCount >= 0 &&
+                    messages.length > _previousMessageCount;
+
                 if (messages.isNotEmpty) {
-                  _scrollToBottom();
+                  if (_previousMessageCount == -1) {
+                    _scrollToBottom();
+                  } else if (hasNewMessages) {
+                    GroupService.markGroupAsRead(
+                        widget.initialGroup.id, widget.currentUid);
+                    _scrollToBottom();
+                  }
                 }
+                _previousMessageCount = messages.length;
+
                 if (messages.isEmpty) {
                   return const Center(
                     child: Column(
