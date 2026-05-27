@@ -144,8 +144,16 @@ class ChatService {
       'lastMessage': message,
       'lastTimestamp': Timestamp.now(),
       'lastSenderId': senderId,
+      'unreadCounts.$receiverId': FieldValue.increment(1),
     });
     await batch.commit();
+  }
+
+  // Mark room as read for a specific user
+  static Future<void> markRoomAsRead(String roomId, String currentUid) async {
+    await _firestore.collection('chat_rooms').doc(roomId).update({
+      'unreadCounts.$currentUid': 0,
+    });
   }
 
   // Stream messages

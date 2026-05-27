@@ -9,6 +9,13 @@ rootProject.buildDir = '../build'
 
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
+
+    afterEvaluate {
+        tasks.withType(JavaCompile).configureEach {
+            options.compilerArgs << "-Xlint:-deprecation" << "-Xlint:-unchecked"
+            options.compilerArgs << "-nowarn"
+        }
+    }
 }
 
 tasks.register("clean", Delete) {

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'call_log_service.dart';
 
 class CallService {
@@ -10,8 +11,23 @@ class CallService {
   static const _config = {
     'iceServers': [
       {'urls': 'stun:stun.l.google.com:19302'},
-      {'urls': 'stun:stun1.l.google.com:19302'},
-    ]
+      {
+        'urls': 'turn:openrelay.metered.ca:80',
+        'username': 'openrelayproject',
+        'credential': 'openrelayproject',
+      },
+      {
+        'urls': 'turn:openrelay.metered.ca:443',
+        'username': 'openrelayproject',
+        'credential': 'openrelayproject',
+      },
+      {
+        'urls': 'turn:openrelay.metered.ca:443?transport=tcp',
+        'username': 'openrelayproject',
+        'credential': 'openrelayproject',
+      }
+    ],
+    'sdpSemantics': 'unified-plan',
   };
 
   RTCPeerConnection? _pc;
@@ -37,6 +53,30 @@ class CallService {
   Function(MediaStream)? onRemoteStream;
   Function(String)? onCallStateChanged;
 
+  /// Request camera and microphone permissions at runtime (required on Android).
+  static Future<bool> requestPermissions({required bool isVideo}) async {
+    if (kIsWeb) return true; // Web handles its own permission prompts
+
+    final permissions = <Permission>[Permission.microphone];
+    if (isVideo) permissions.add(Permission.camera);
+
+    final statuses = await permissions.request();
+
+    final micGranted = statuses[Permission.microphone]?.isGranted ?? false;
+    final camGranted = isVideo
+        ? (statuses[Permission.camera]?.isGranted ?? false)
+        : true;
+
+    if (!micGranted) {
+      debugPrint('[CallService] Microphone permission DENIED');
+    }
+    if (isVideo && !camGranted) {
+      debugPrint('[CallService] Camera permission DENIED');
+    }
+
+    return micGranted && camGranted;
+  }
+
   // ── Start call (caller) ───────────────────────────────────────────────
   Future<String> startCall({
     required String callerId,
@@ -46,6 +86,12 @@ class CallService {
     required String receiverName,
     required bool isVideo,
   }) async {
+    // Request runtime permissions first
+    final granted = await requestPermissions(isVideo: isVideo);
+    if (!granted) {
+      throw Exception('Permissions not granted for ${isVideo ? "video" : "audio"} call');
+    }
+
     _localStream = await navigator.mediaDevices.getUserMedia({
       'audio': true,
       'video': isVideo ? {'facingMode': 'user'} : false,
@@ -61,14 +107,20 @@ class CallService {
     _pc!.onTrack = (event) {
       if (event.streams.isNotEmpty) onRemoteStream?.call(event.streams[0]);
     };
+    
+    _pc!.onAddStream = (stream) {
+      onRemoteStream?.call(stream);
+    };
 
     _pc!.onIceCandidate = (c) {
-      callRef.collection('candidates').add({
-        'candidate': c.candidate,
-        'sdpMid': c.sdpMid,
-        'sdpMLineIndex': c.sdpMLineIndex,
-        'fromUid': callerId,
-      });
+      if (c.candidate != null && c.candidate!.isNotEmpty) {
+        callRef.collection('candidates').add({
+          'candidate': c.candidate,
+          'sdpMid': c.sdpMid,
+          'sdpMLineIndex': c.sdpMLineIndex,
+          'fromUid': callerId,
+        });
+      }
     };
 
     final offer = await _pc!.createOffer();
@@ -153,6 +205,12 @@ class CallService {
     String receiverName = '',
     String receiverPhotoUrl = '',
   }) async {
+    // Request runtime permissions first
+    final granted = await requestPermissions(isVideo: isVideo);
+    if (!granted) {
+      debugPrint('[CallService] Permissions denied for answering call');
+    }
+
     _currentCallId = callId;
     _wasAnswered = true;
     _answerTime = DateTime.now();
@@ -185,14 +243,20 @@ class CallService {
     _pc!.onTrack = (event) {
       if (event.streams.isNotEmpty) onRemoteStream?.call(event.streams[0]);
     };
+    
+    _pc!.onAddStream = (stream) {
+      onRemoteStream?.call(stream);
+    };
 
     _pc!.onIceCandidate = (c) {
-      callRef.collection('candidates').add({
-        'candidate': c.candidate,
-        'sdpMid': c.sdpMid,
-        'sdpMLineIndex': c.sdpMLineIndex,
-        'fromUid': receiverUid,
-      });
+      if (c.candidate != null && c.candidate!.isNotEmpty) {
+        callRef.collection('candidates').add({
+          'candidate': c.candidate,
+          'sdpMid': c.sdpMid,
+          'sdpMLineIndex': c.sdpMLineIndex,
+          'fromUid': receiverUid,
+        });
+      }
     };
 
     // Set offer → create answer

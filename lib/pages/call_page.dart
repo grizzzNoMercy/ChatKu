@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import '../services/call_service.dart';
@@ -44,14 +45,17 @@ class _CallPageState extends State<CallPage> {
   bool _isMuted = false;
   bool _isCameraOff = false;
   bool _isFrontCamera = true;
+  bool _isSpeaker = false;
   String _callStatus = 'ringing';
   Timer? _timer;
   int _seconds = 0;
   bool _disposed = false;
+  bool _popped = false;
 
   @override
   void initState() {
     super.initState();
+    _isSpeaker = widget.isVideo; // Video calls default to speaker
     _init();
   }
 
@@ -63,7 +67,9 @@ class _CallPageState extends State<CallPage> {
       if (!_disposed) setState(() => _localRenderer.srcObject = stream);
     };
     _callService.onRemoteStream = (stream) {
-      if (!_disposed) setState(() => _remoteRenderer.srcObject = stream);
+      if (!_disposed) {
+        setState(() => _remoteRenderer.srcObject = stream);
+      }
     };
     _callService.onCallStateChanged = (status) {
       if (_disposed) return;
@@ -71,33 +77,61 @@ class _CallPageState extends State<CallPage> {
       if (status == 'answered') {
         // Stop ringback tone when call is answered
         SoundService.instance.stopRingback();
+        // Set audio output route
+        if (!kIsWeb) {
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (!_disposed) Helper.setSpeakerphoneOn(_isSpeaker);
+          });
+        }
         if (_timer == null) _startTimer();
       }
       if (status == 'ended' || status == 'rejected') {
         SoundService.instance.stopRingback();
         _timer?.cancel();
-        if (mounted) Navigator.pop(context);
+        if (mounted && !_popped) {
+          _popped = true;
+          Navigator.pop(context);
+        }
       }
     };
 
-    if (widget.isCaller) {
-      // Play ringback tone while waiting for answer
-      SoundService.instance.playRingback();
-      await _callService.startCall(
-        callerId: widget.currentUid,
-        callerName: widget.currentUserName ?? '',
-        callerPhotoUrl: widget.currentUserPhotoUrl ?? '',
-        receiverId: widget.targetUid!,
-        receiverName: widget.targetName,
-        isVideo: widget.isVideo,
-      );
-    } else {
-      await _callService.answerCall(
-        callId: widget.callId!,
-        receiverUid: widget.currentUid,
-        isVideo: widget.isVideo,
-      );
-      _startTimer();
+    try {
+      if (widget.isCaller) {
+        // Play ringback tone while waiting for answer
+        SoundService.instance.playRingback();
+        await _callService.startCall(
+          callerId: widget.currentUid,
+          callerName: widget.currentUserName ?? '',
+          callerPhotoUrl: widget.currentUserPhotoUrl ?? '',
+          receiverId: widget.targetUid!,
+          receiverName: widget.targetName,
+          isVideo: widget.isVideo,
+        );
+      } else {
+        await _callService.answerCall(
+          callId: widget.callId!,
+          receiverUid: widget.currentUid,
+          isVideo: widget.isVideo,
+        );
+        // Set audio output route after answering
+        if (!kIsWeb) {
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (!_disposed) Helper.setSpeakerphoneOn(_isSpeaker);
+          });
+        }
+        _startTimer();
+      }
+    } catch (e) {
+      debugPrint('[CallPage] Call init error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memulai panggilan: $e'),
+            backgroundColor: const Color(0xFFFF3B30),
+          ),
+        );
+        Navigator.pop(context);
+      }
     }
   }
 
@@ -131,7 +165,10 @@ class _CallPageState extends State<CallPage> {
   Future<void> _endCall() async {
     await SoundService.instance.stopRingback();
     await _callService.endCall();
-    if (mounted) Navigator.pop(context);
+    if (mounted && !_popped) {
+      _popped = true;
+      Navigator.pop(context);
+    }
   }
 
   @override
@@ -234,10 +271,17 @@ class _CallPageState extends State<CallPage> {
           onTap: _endCall,
         ),
         _ControlButton(
-          icon: Icons.volume_up_rounded,
-          label: 'Speaker',
-          color: Colors.white.withValues(alpha: 0.15),
-          onTap: () {},
+          icon: _isSpeaker ? Icons.volume_up_rounded : Icons.volume_down_rounded,
+          label: _isSpeaker ? 'Speaker' : 'Earpiece',
+          color: _isSpeaker
+              ? const Color(0xFF34C759)
+              : Colors.white.withValues(alpha: 0.15),
+          onTap: () {
+            setState(() => _isSpeaker = !_isSpeaker);
+            if (!kIsWeb) {
+              Helper.setSpeakerphoneOn(_isSpeaker);
+            }
+          },
         ),
       ],
     );

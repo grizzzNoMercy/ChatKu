@@ -661,10 +661,12 @@ class _HomePageState extends State<HomePage> {
 // ── Group Tile ────────────────────────────────────────────────────────
 class _GroupTile extends StatelessWidget {
   final GroupModel group;
+  final String currentUid;
   final VoidCallback onTap;
 
   const _GroupTile({
     required this.group,
+    required this.currentUid,
     required this.onTap,
   });
 
@@ -737,6 +739,28 @@ class _GroupTile extends StatelessWidget {
               color: Color(0xFFBBBBBB),
             ),
           ),
+          if ((group.unreadCounts[currentUid] ?? 0) > 0) ...[
+            const SizedBox(height: 6),
+            Container(
+              width: 20,
+              height: 20,
+              decoration: const BoxDecoration(
+                color: Color(0xFF111111),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                (group.unreadCounts[currentUid] ?? 0) > 99
+                    ? '99'
+                    : '${group.unreadCounts[currentUid]}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
       onTap: onTap,
@@ -1078,6 +1102,7 @@ class _ChatTabState extends State<_ChatTab>
                         return UserTile(
                           user: item,
                           roomId: roomId,
+                          currentUid: currentUid,
                           onTap: () {
                             Navigator.push(
                               context,
@@ -1095,6 +1120,7 @@ class _ChatTabState extends State<_ChatTab>
                       } else if (item is GroupModel) {
                         return _GroupTile(
                           group: item,
+                          currentUid: currentUid,
                           onTap: () {
                             Navigator.push(
                               context,

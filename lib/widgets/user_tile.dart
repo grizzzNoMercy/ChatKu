@@ -7,6 +7,7 @@ import '../utils/avatar_helper.dart';
 class UserTile extends StatelessWidget {
   final UserModel user;
   final String roomId;
+  final String currentUid;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
 
@@ -14,6 +15,7 @@ class UserTile extends StatelessWidget {
     super.key,
     required this.user,
     required this.roomId,
+    required this.currentUid,
     required this.onTap,
     this.onLongPress,
   });
@@ -26,7 +28,8 @@ class UserTile extends StatelessWidget {
         final room = snapshot.data;
         final lastMsg = room?['lastMessage'] as String? ?? '';
         final lastTs = room?['lastTimestamp'] as Timestamp?;
-        final unread = (room?['unread'] as int?) ?? 0;
+        final unreadCounts = room?['unreadCounts'] as Map<String, dynamic>?;
+        final unread = (unreadCounts?[currentUid] as int?) ?? 0;
 
         return InkWell(
           onTap: onTap,
