@@ -9,6 +9,7 @@ import '../models/user_model.dart';
 import '../services/group_service.dart';
 import '../utils/avatar_helper.dart';
 import '../widgets/chat_bubble.dart';
+import 'group_details_page.dart';
 
 class GroupChatPage extends StatefulWidget {
   final GroupModel initialGroup;
@@ -148,53 +149,67 @@ class _GroupChatPageState extends State<GroupChatPage> {
           stream: GroupService.groupStream(widget.initialGroup.id),
           builder: (context, snapshot) {
             final group = snapshot.data ?? widget.initialGroup;
-            return Row(
-              children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: AvatarHelper.backgroundColor(group.name),
-                  backgroundImage: group.photoUrl.isNotEmpty
-                      ? NetworkImage(group.photoUrl)
-                      : null,
-                  child: group.photoUrl.isEmpty
-                      ? Text(
-                          group.name.isNotEmpty
-                              ? group.name[0].toUpperCase()
-                              : '?',
-                          style: TextStyle(
-                            color: AvatarHelper.textColor(group.name),
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
-                          ),
-                        )
-                      : null,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        group.name,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF111111),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        '${group.members.length} anggota',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF999999),
-                        ),
-                      ),
-                    ],
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => GroupDetailsPage(
+                      group: group,
+                      currentUid: widget.currentUid,
+                    ),
                   ),
-                ),
-              ],
+                );
+              },
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: AvatarHelper.backgroundColor(group.name),
+                    backgroundImage: group.photoUrl.isNotEmpty
+                        ? NetworkImage(group.photoUrl)
+                        : null,
+                    child: group.photoUrl.isEmpty
+                        ? Text(
+                            group.name.isNotEmpty
+                                ? group.name[0].toUpperCase()
+                                : '?',
+                            style: TextStyle(
+                              color: AvatarHelper.textColor(group.name),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          group.name,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF111111),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          '${group.members.length} anggota',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF999999),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             );
           },
         ),
@@ -262,6 +277,32 @@ class _GroupChatPageState extends State<GroupChatPage> {
                     
                     final senderName = _membersMap[msg.senderId]?.username ?? 'Anggota';
 
+                    if (msg.type == MessageType.system) {
+                      return Column(
+                        children: [
+                          if (showDate) _DateDivider(msg.timestamp.toDate()),
+                          Center(
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 12),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF3F4F6),
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: Text(
+                                msg.message,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF999999),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+
                     return Column(
                       crossAxisAlignment:
                           isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -272,10 +313,9 @@ class _GroupChatPageState extends State<GroupChatPage> {
                             padding: const EdgeInsets.only(left: 12, bottom: 4, top: 8),
                             child: Text(
                               senderName,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AvatarHelper.textColor(senderName),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF999999),
                               ),
                             ),
                           ),

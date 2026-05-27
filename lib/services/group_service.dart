@@ -210,4 +210,41 @@ class GroupService {
             .map((doc) => MessageModel.fromMap(doc.data(), doc.id))
             .toList());
   }
+
+  // Leave group
+  static Future<void> leaveGroup(String groupId, String userId) async {
+    await _firestore.collection('groups').doc(groupId).update({
+      'members': FieldValue.arrayRemove([userId]),
+    });
+  }
+
+  // Send system message
+  static Future<void> sendSystemMessage({
+    required String groupId,
+    required String message,
+  }) async {
+    await _ensureAndSend(
+      groupId: groupId,
+      senderId: 'system',
+      message: message,
+      type: MessageType.system,
+    );
+  }
+
+  // Add members
+  static Future<void> addMembers({
+    required String groupId,
+    required List<String> userIds,
+    required String adderName,
+    required String newMemberNames,
+  }) async {
+    await _firestore.collection('groups').doc(groupId).update({
+      'members': FieldValue.arrayUnion(userIds),
+    });
+    
+    await sendSystemMessage(
+      groupId: groupId,
+      message: '$adderName menambahkan $newMemberNames',
+    );
+  }
 }

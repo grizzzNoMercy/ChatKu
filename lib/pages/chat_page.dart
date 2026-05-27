@@ -13,6 +13,7 @@ import '../utils/avatar_helper.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/presence_widget.dart';
 import 'call_page.dart';
+import 'contact_profile_page.dart';
 
 class ChatPage extends StatefulWidget {
   final UserModel targetUser;
@@ -215,72 +216,82 @@ class _ChatPageState extends State<ChatPage> {
           stream: ChatService.userStream(widget.targetUser.uid),
           builder: (context, snapshot) {
             final user = snapshot.data ?? widget.targetUser;
-            return Row(
-              children: [
-                Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor:
-                          AvatarHelper.backgroundColor(user.username),
-                      backgroundImage: user.photoUrl.isNotEmpty
-                          ? NetworkImage(user.photoUrl)
-                          : null,
-                      child: user.photoUrl.isEmpty
-                          ? Text(
-                              user.username.isNotEmpty
-                                  ? user.username[0].toUpperCase()
-                                  : '?',
-                              style: TextStyle(
-                                color:
-                                    AvatarHelper.textColor(user.username),
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                              ),
-                            )
-                          : null,
-                    ),
-                    if (user.online)
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF34C759),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                                color: Colors.white, width: 1.5),
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ContactProfilePage(user: user),
+                  ),
+                );
+              },
+              child: Row(
+                children: [
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundColor:
+                            AvatarHelper.backgroundColor(user.username),
+                        backgroundImage: user.photoUrl.isNotEmpty
+                            ? NetworkImage(user.photoUrl)
+                            : null,
+                        child: user.photoUrl.isEmpty
+                            ? Text(
+                                user.username.isNotEmpty
+                                    ? user.username[0].toUpperCase()
+                                    : '?',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                ),
+                              )
+                            : null,
+                      ),
+                      if (user.online)
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF34C759),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: Colors.white, width: 1.5),
+                            ),
                           ),
                         ),
-                      ),
-                  ],
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user.username,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF111111),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      PresenceWidget(
-                        user: user,
-                        roomId: _roomId,
-                        currentUid: widget.currentUid,
-                      ),
                     ],
                   ),
-                ),
-              ],
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user.username,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF111111),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        PresenceWidget(
+                          user: user,
+                          roomId: _roomId,
+                          currentUid: widget.currentUid,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             );
           },
         ),

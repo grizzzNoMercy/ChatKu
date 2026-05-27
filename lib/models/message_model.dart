@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum MessageType { text, image, video, file }
+enum MessageType { text, image, video, file, system }
 
 class MessageModel {
   final String id;
@@ -56,6 +56,8 @@ class MessageModel {
         return MessageType.video;
       case 'file':
         return MessageType.file;
+      case 'system':
+        return MessageType.system;
       default:
         return MessageType.text;
     }

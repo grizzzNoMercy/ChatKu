@@ -7,6 +7,8 @@ import '../services/auth_service.dart';
 import '../services/presence_service.dart';
 import '../utils/avatar_helper.dart';
 import 'login_page.dart';
+import 'edit_profile_page.dart';
+
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -16,12 +18,8 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final _usernameController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-  File? _newPhoto;
   UserModel? _userData;
   bool _loading = false;
-  bool _saving = false;
 
   @override
   void initState() {
@@ -35,53 +33,12 @@ class _ProfilePageState extends State<ProfilePage> {
     if (mounted) {
       setState(() {
         _userData = user;
-        _usernameController.text = user?.username ?? '';
         _loading = false;
       });
     }
   }
 
-  Future<void> _pickPhoto() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 400,
-      maxHeight: 400,
-      imageQuality: 80,
-    );
-    if (picked != null) {
-      setState(() => _newPhoto = File(picked.path));
-    }
-  }
 
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _saving = true);
-    final error = await context.read<AuthService>().updateProfile(
-      username: _usernameController.text.trim(),
-      photoFile: _newPhoto,
-    );
-    if (!mounted) return;
-    setState(() => _saving = false);
-    if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error),
-          backgroundColor: const Color(0xFFFF3B30),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Profil berhasil diperbarui'),
-          backgroundColor: const Color(0xFF34C759),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        ),
-      );
-      _loadUser();
-    }
-  }
 
   Future<void> _logout() async {
     final confirm = await showDialog<bool>(
@@ -123,11 +80,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  @override
-  void dispose() {
-    _usernameController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -207,7 +159,18 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () async {
+                      if (_userData == null) return;
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EditProfilePage(userData: _userData!),
+                        ),
+                      );
+                      if (result == true) {
+                        _loadUser();
+                      }
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0EA5E9),
                       foregroundColor: Colors.white,
