@@ -171,12 +171,31 @@ class GroupService {
 
     final batch = _firestore.batch();
     batch.set(msgRef, msg.toMap());
-    batch.update(_firestore.collection('groups').doc(groupId), {
+    
+    final groupDoc = await _firestore.collection('groups').doc(groupId).get();
+    final members = List<String>.from(groupDoc.data()?['members'] ?? []);
+    
+    final updates = <String, dynamic>{
       'lastMessage': message,
       'lastTimestamp': Timestamp.now(),
       'lastSenderId': senderId,
-    });
+    };
+    
+    for (var member in members) {
+      if (member != senderId) {
+        updates['unreadCounts.$member'] = FieldValue.increment(1);
+      }
+    }
+
+    batch.update(_firestore.collection('groups').doc(groupId), updates);
     await batch.commit();
+  }
+
+  // Mark group as read for a specific user
+  static Future<void> markGroupAsRead(String groupId, String currentUid) async {
+    await _firestore.collection('groups').doc(groupId).update({
+      'unreadCounts.$currentUid': 0,
+    });
   }
 
   // Stream group messages

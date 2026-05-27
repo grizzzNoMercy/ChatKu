@@ -49,6 +49,8 @@ class _ChatPageState extends State<ChatPage> {
       widget.currentUid,
       widget.targetUser.uid,
     );
+    // Mark as read when entering the room
+    await ChatService.markRoomAsRead(_roomId, widget.currentUid);
     if (mounted) {
       context.read<PresenceService>().enterRoom(_roomId);
     }
@@ -75,6 +77,24 @@ class _ChatPageState extends State<ChatPage> {
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
+      }
+    });
+  }
+
+  void _scrollToBottomIfNear() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        final position = _scrollController.position;
+        final distanceFromBottom =
+            position.maxScrollExtent - position.pixels;
+        // Only auto-scroll if user is within 150px of the bottom
+        if (distanceFromBottom < 150) {
+          _scrollController.animateTo(
+            position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
       }
     });
   }
@@ -285,7 +305,8 @@ class _ChatPageState extends State<ChatPage> {
             child: StreamBuilder<List<MessageModel>>(
               stream: ChatService.messagesStream(_roomId),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (snapshot.connectionState == ConnectionState.waiting &&
+                    _previousMessageCount == -1) {
                   return const Center(
                     child: CircularProgressIndicator(
                       color: Color(0xFF111111),
@@ -295,19 +316,33 @@ class _ChatPageState extends State<ChatPage> {
                 }
                 final messages = snapshot.data ?? [];
 
+                // Detect new messages
+                final bool hasNewMessages = _previousMessageCount >= 0 &&
+                    messages.length > _previousMessageCount;
+
                 // Play notification sound for new incoming messages
-                if (_previousMessageCount >= 0 &&
-                    messages.length > _previousMessageCount) {
+                if (hasNewMessages) {
                   final lastMsg = messages.last;
                   if (lastMsg.senderId != widget.currentUid) {
                     SoundService.instance.playNotification();
                   }
                 }
+
+                // Auto-scroll only on first load or when new messages arrive
+                // and user is near the bottom
+                if (messages.isNotEmpty) {
+                  if (_previousMessageCount == -1) {
+                    // First load: scroll to bottom
+                    _scrollToBottom();
+                  } else if (hasNewMessages) {
+                    // New message arrived while user is in chat: mark as read
+                    ChatService.markRoomAsRead(_roomId, widget.currentUid);
+                    // only scroll if user is near bottom
+                    _scrollToBottomIfNear();
+                  }
+                }
                 _previousMessageCount = messages.length;
 
-                if (messages.isNotEmpty) {
-                  _scrollToBottom();
-                }
                 if (messages.isEmpty) {
                   return const Center(
                     child: Column(
