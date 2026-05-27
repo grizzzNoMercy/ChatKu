@@ -19,12 +19,13 @@ class CallLogPage extends StatelessWidget {
         surfaceTintColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
+        centerTitle: true,
         title: const Text(
-          'Log Panggilan',
+          'ChatKu',
           style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-            color: Color(0xFF111111),
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+            color: Color(0xFF0EA5E9),
           ),
         ),
         actions: [
@@ -68,17 +69,49 @@ class CallLogPage extends StatelessWidget {
           ),
         ],
       ),
-      body: StreamBuilder<List<CallLogModel>>(
-        stream: CallLogService.logsStream(currentUid),
-        builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
+            child: Text(
+              'Calls',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
                 color: Color(0xFF111111),
-                strokeWidth: 2,
               ),
-            );
-          }
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search calls...',
+                hintStyle: const TextStyle(color: Color(0xFF999999), fontSize: 14),
+                prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF999999)),
+                filled: true,
+                fillColor: Colors.grey[100],
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder<List<CallLogModel>>(
+              stream: CallLogService.logsStream(currentUid),
+              builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF0EA5E9),
+                      strokeWidth: 2,
+                    ),
+                  );
+                }
 
           if (snap.hasError) {
             return Center(
@@ -136,6 +169,9 @@ class CallLogPage extends StatelessWidget {
             },
           );
         },
+      ),
+          ),
+        ],
       ),
     );
   }
@@ -459,7 +495,7 @@ class _CallLogTile extends StatelessWidget {
                     ? Icons.videocam_outlined
                     : Icons.phone_outlined,
                 size: 16,
-                color: const Color(0xFF007AFF),
+                color: const Color(0xFF0EA5E9),
               ),
             ],
           ),

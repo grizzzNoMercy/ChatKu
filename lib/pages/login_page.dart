@@ -31,9 +31,9 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _loading = true);
 
     final error = await context.read<AuthService>().login(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-    );
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
 
     if (!mounted) return;
     setState(() => _loading = false);
@@ -60,6 +60,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -75,11 +76,11 @@ class _LoginPageState extends State<LoginPage> {
                     width: 72,
                     height: 72,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF111111),
-                      borderRadius: BorderRadius.circular(20),
+                      color: const Color(0xFF0EA5E9),
+                      borderRadius: BorderRadius.circular(18),
                     ),
                     child: const Icon(
-                      Icons.chat_bubble_rounded,
+                      Icons.chat_bubble,
                       color: Colors.white,
                       size: 36,
                     ),
@@ -92,7 +93,7 @@ class _LoginPageState extends State<LoginPage> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF111111),
+                    color: Color(0xFF1E1E1E),
                     height: 1.2,
                     letterSpacing: -0.5,
                   ),
@@ -130,8 +131,7 @@ class _LoginPageState extends State<LoginPage> {
                   obscureText: _obscure,
                   decoration: InputDecoration(
                     hintText: 'Password',
-                    hintStyle:
-                        const TextStyle(color: Color(0xFF999999)),
+                    hintStyle: const TextStyle(color: Color(0xFF999999)),
                     prefixIcon: const Icon(Icons.lock_outline_rounded,
                         size: 20, color: Color(0xFF999999)),
                     suffixIcon: IconButton(
@@ -142,8 +142,7 @@ class _LoginPageState extends State<LoginPage> {
                         size: 20,
                         color: const Color(0xFF999999),
                       ),
-                      onPressed: () =>
-                          setState(() => _obscure = !_obscure),
+                      onPressed: () => setState(() => _obscure = !_obscure),
                     ),
                   ),
                   validator: (v) {
@@ -191,7 +190,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: const Text(
                         'Daftar',
                         style: TextStyle(
-                          color: Color(0xFF111111),
+                          color: Color(0xFF0EA5E9),
                           fontWeight: FontWeight.w700,
                         ),
                       ),

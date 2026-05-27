@@ -295,6 +295,11 @@ class _ChatPageState extends State<ChatPage> {
             tooltip: 'Panggilan Video',
             onPressed: () => _startCall(true),
           ),
+          IconButton(
+            icon: const Icon(Icons.more_vert_rounded, size: 22),
+            tooltip: 'Opsi Lainnya',
+            onPressed: () {},
+          ),
           const SizedBox(width: 4),
         ],
       ),
@@ -654,20 +659,10 @@ class _InputBar extends StatelessWidget {
         ),
         child: Row(
           children: [
-            GestureDetector(
-              onTap: onAttach,
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF5F5F5),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.add_rounded,
-                    color: Color(0xFF111111), size: 20),
-              ),
+            IconButton(
+              icon: const Icon(Icons.emoji_emotions_outlined, color: Colors.grey),
+              onPressed: () {},
             ),
-            const SizedBox(width: 8),
             Expanded(
               child: TextField(
                 controller: controller,
@@ -677,7 +672,7 @@ class _InputBar extends StatelessWidget {
                 textCapitalization: TextCapitalization.sentences,
                 style: const TextStyle(fontSize: 14),
                 decoration: InputDecoration(
-                  hintText: 'Tulis pesan...',
+                  hintText: 'Message...',
                   hintStyle: const TextStyle(
                       color: Color(0xFF999999), fontSize: 14),
                   contentPadding: const EdgeInsets.symmetric(
@@ -697,12 +692,15 @@ class _InputBar extends StatelessWidget {
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: const Color(0xFFF5F5F5),
+                  fillColor: Colors.grey[100],
                 ),
                 onSubmitted: (_) => onSend(),
               ),
             ),
-            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.add, color: Colors.grey),
+              onPressed: onAttach,
+            ),
             ValueListenableBuilder<TextEditingValue>(
               valueListenable: controller,
               builder: (context, value, _) {
@@ -714,7 +712,7 @@ class _InputBar extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: const BoxDecoration(
-                      color: Color(0xFF111111),
+                      color: Color(0xFF0EA5E9),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(

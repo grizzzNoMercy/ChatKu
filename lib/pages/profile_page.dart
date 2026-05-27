@@ -132,156 +132,193 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Profil'),
-        actions: [
-          TextButton(
-            onPressed: _saving ? null : _save,
-            child: _saving
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Color(0xFF111111),
-                    ),
-                  )
-                : const Text(
-                    'Simpan',
-                    style: TextStyle(
-                      color: Color(0xFF111111),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        centerTitle: true,
+        title: const Text(
+          'ChatKu',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+            color: Color(0xFF0EA5E9),
           ),
-        ],
+        ),
       ),
       body: _loading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF111111)),
+              child: CircularProgressIndicator(color: Color(0xFF0EA5E9)),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    // Avatar
-                    GestureDetector(
-                      onTap: _pickPhoto,
-                      child: Stack(
-                        children: [
-                          CircleAvatar(
-                            radius: 52,
-                            backgroundColor: AvatarHelper.backgroundColor(
-                                _userData?.username ?? ''),
-                            backgroundImage: _newPhoto != null
-                                ? FileImage(_newPhoto!)
-                                : (_userData?.photoUrl.isNotEmpty == true
-                                    ? NetworkImage(_userData!.photoUrl)
-                                        as ImageProvider
-                                    : null),
-                            child: (_newPhoto == null &&
-                                    (_userData?.photoUrl.isEmpty ?? true))
-                                ? Text(
-                                    _userData?.username.isNotEmpty == true
-                                        ? _userData!.username[0].toUpperCase()
-                                        : '?',
-                                    style: TextStyle(
-                                      color: AvatarHelper.textColor(
-                                          _userData?.username ?? ''),
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 36,
-                                    ),
-                                  )
-                                : null,
-                          ),
-                          Positioned(
-                            right: 2,
-                            bottom: 2,
-                            child: Container(
-                              width: 30,
-                              height: 30,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF111111),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.camera_alt_rounded,
-                                color: Colors.white,
-                                size: 16,
-                              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Profile',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF111111),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  CircleAvatar(
+                    radius: 52,
+                    backgroundColor: const Color(0xFF0EA5E9),
+                    backgroundImage: _userData?.photoUrl.isNotEmpty == true
+                        ? NetworkImage(_userData!.photoUrl)
+                        : null,
+                    child: (_userData?.photoUrl.isEmpty ?? true)
+                        ? Text(
+                            _userData?.username.isNotEmpty == true
+                                ? _userData!.username[0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 36,
                             ),
-                          ),
-                        ],
+                          )
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    _userData?.username ?? '',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF111111),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _userData?.email ?? '',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF999999),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0EA5E9),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: _pickPhoto,
-                      child: const Text(
-                        'Ganti foto',
-                        style: TextStyle(color: Color(0xFF999999)),
-                      ),
+                    child: const Text(
+                      'Edit Profile',
+                      style: TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(height: 24),
-                    // Username field
-                    TextFormField(
-                      controller: _usernameController,
-                      decoration: const InputDecoration(
-                        hintText: 'Username',
-                        hintStyle: TextStyle(color: Color(0xFF999999)),
-                        prefixIcon: Icon(Icons.person_outline_rounded,
-                            size: 20, color: Color(0xFF999999)),
-                      ),
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Username wajib diisi';
-                        if (v.length < 3) return 'Username minimal 3 karakter';
-                        return null;
-                      },
+                  ),
+                  const SizedBox(height: 32),
+                  _buildSettingItem(
+                    icon: Icons.notifications_none_rounded,
+                    title: 'Notifications',
+                    subtitle: 'Manage notification settings',
+                    onTap: () {},
+                  ),
+                  const SizedBox(height: 8),
+                  _buildSettingItem(
+                    icon: Icons.lock_outline_rounded,
+                    title: 'Privacy',
+                    subtitle: 'Control your privacy settings',
+                    onTap: () {},
+                  ),
+                  const SizedBox(height: 8),
+                  _buildSettingItem(
+                    icon: Icons.shield_outlined,
+                    title: 'Security',
+                    subtitle: 'Manage security options',
+                    onTap: () {},
+                  ),
+                  const SizedBox(height: 8),
+                  _buildSettingItem(
+                    icon: Icons.palette_outlined,
+                    title: 'Appearance',
+                    subtitle: 'Customize app theme',
+                    onTap: () {},
+                  ),
+                  const SizedBox(height: 8),
+                  _buildSettingItem(
+                    icon: Icons.language_rounded,
+                    title: 'Language',
+                    subtitle: 'English',
+                    onTap: () {},
+                  ),
+                  const SizedBox(height: 24),
+                  OutlinedButton.icon(
+                    onPressed: _logout,
+                    icon: const Icon(
+                      Icons.logout_rounded,
+                      color: Color(0xFFFF3B30),
+                      size: 20,
                     ),
-                    const SizedBox(height: 16),
-                    // Email (read-only)
-                    TextFormField(
-                      initialValue: _userData?.email ?? '',
-                      readOnly: true,
-                      decoration: const InputDecoration(
-                        hintText: 'Email',
-                        hintStyle: TextStyle(color: Color(0xFF999999)),
-                        prefixIcon: Icon(Icons.mail_outline_rounded,
-                            size: 20, color: Color(0xFF999999)),
-                        filled: true,
-                        fillColor: Color(0xFFF5F5F5),
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                    // Logout button
-                    OutlinedButton.icon(
-                      onPressed: _logout,
-                      icon: const Icon(
-                        Icons.logout_rounded,
+                    label: const Text(
+                      'Logout',
+                      style: TextStyle(
                         color: Color(0xFFFF3B30),
-                        size: 18,
-                      ),
-                      label: const Text(
-                        'Keluar',
-                        style: TextStyle(
-                          color: Color(0xFFFF3B30),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 54),
-                        side: const BorderSide(color: Color(0xFFFF3B30)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(28),
-                        ),
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ],
-                ),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 50),
+                      side: const BorderSide(color: Color(0xFFFF3B30)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
+    );
+  }
+
+  Widget _buildSettingItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      onTap: onTap,
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, color: const Color(0xFF111111), size: 24),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF111111),
+          fontSize: 15,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(
+          color: Color(0xFF999999),
+          fontSize: 13,
+        ),
+      ),
+      trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFFCCCCCC)),
     );
   }
 }

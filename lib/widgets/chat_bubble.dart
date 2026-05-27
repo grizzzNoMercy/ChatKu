@@ -79,21 +79,18 @@ class _TextBubble extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: isMe ? const Color(0xFF111111) : Colors.white,
+        color: isMe ? const Color(0xFF0EA5E9) : Colors.grey[100],
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(18),
           topRight: const Radius.circular(18),
           bottomLeft: Radius.circular(isMe ? 18 : 4),
           bottomRight: Radius.circular(isMe ? 4 : 18),
         ),
-        border: isMe
-            ? null
-            : Border.all(color: const Color(0xFFE5E5E5), width: 1),
       ),
       child: Text(
         text,
         style: TextStyle(
-          color: isMe ? Colors.white : const Color(0xFF111111),
+          color: isMe ? Colors.white : Colors.black87,
           fontSize: 15,
           height: 1.4,
         ),
@@ -129,7 +126,7 @@ class _ImageBubble extends StatelessWidget {
             color: const Color(0xFFF5F5F5),
             child: const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF111111),
+                color: Color(0xFF0EA5E9),
                 strokeWidth: 2,
               ),
             ),
@@ -180,7 +177,7 @@ class _VideoBubble extends StatelessWidget {
         width: 200,
         height: 120,
         decoration: BoxDecoration(
-          color: const Color(0xFF111111),
+          color: isMe ? const Color(0xFF0EA5E9) : Colors.grey[100],
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(18),
             topRight: const Radius.circular(18),
@@ -193,13 +190,15 @@ class _VideoBubble extends StatelessWidget {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
+                color: isMe
+                    ? Colors.white.withValues(alpha: 0.2)
+                    : const Color(0xFF0EA5E9).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               padding: const EdgeInsets.all(14),
-              child: const Icon(
+              child: Icon(
                 Icons.play_arrow_rounded,
-                color: Colors.white,
+                color: isMe ? Colors.white : const Color(0xFF0EA5E9),
                 size: 36,
               ),
             ),
@@ -211,7 +210,9 @@ class _VideoBubble extends StatelessWidget {
                 child: Text(
                   'Ketuk untuk putar video',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: isMe
+                        ? Colors.white.withValues(alpha: 0.8)
+                        : Colors.black54,
                     fontSize: 11,
                   ),
                 ),
@@ -261,23 +262,20 @@ class _FileBubble extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: isMe ? const Color(0xFF111111) : Colors.white,
+          color: isMe ? const Color(0xFF0EA5E9) : Colors.grey[100],
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(18),
             topRight: const Radius.circular(18),
             bottomLeft: Radius.circular(isMe ? 18 : 4),
             bottomRight: Radius.circular(isMe ? 4 : 18),
           ),
-          border: isMe
-              ? null
-              : Border.all(color: const Color(0xFFE5E5E5), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               _iconForFile(fileName),
-              color: isMe ? Colors.white70 : const Color(0xFF111111),
+              color: isMe ? Colors.white70 : const Color(0xFF0EA5E9),
               size: 28,
             ),
             const SizedBox(width: 10),
@@ -288,7 +286,7 @@ class _FileBubble extends StatelessWidget {
                   Text(
                     fileName,
                     style: TextStyle(
-                      color: isMe ? Colors.white : const Color(0xFF111111),
+                      color: isMe ? Colors.white : Colors.black87,
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                     ),
@@ -300,7 +298,7 @@ class _FileBubble extends StatelessWidget {
                     style: TextStyle(
                       color: isMe
                           ? Colors.white.withValues(alpha: 0.7)
-                          : const Color(0xFF999999),
+                          : Colors.black54,
                       fontSize: 11,
                     ),
                   ),

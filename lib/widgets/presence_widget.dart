@@ -21,13 +21,13 @@ class PresenceWidget extends StatelessWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _PulsingDot(color: const Color(0xFF111111)),
+          _PulsingDot(color: const Color(0xFF0EA5E9)),
           const SizedBox(width: 4),
           const Text(
             'Sedang melihat chat',
             style: TextStyle(
               fontSize: 12,
-              color: Color(0xFF111111),
+              color: Color(0xFF0EA5E9),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -44,16 +44,16 @@ class PresenceWidget extends StatelessWidget {
             width: 7,
             height: 7,
             decoration: const BoxDecoration(
-              color: Color(0xFF34C759),
+              color: Colors.green,
               shape: BoxShape.circle,
             ),
           ),
           const SizedBox(width: 4),
           const Text(
-            'Online',
+            'Active now',
             style: TextStyle(
               fontSize: 12,
-              color: Color(0xFF34C759),
+              color: Colors.green,
               fontWeight: FontWeight.w500,
             ),
           ),

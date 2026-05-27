@@ -31,7 +31,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late final PageController _pageController;
-  int _currentPage = 1;
+  int _currentPage = 0;
   StreamSubscription<QuerySnapshot>? _callSub;
   StreamSubscription<QuerySnapshot>? _roomsSub;
   StreamSubscription<QuerySnapshot>? _groupsSub;
@@ -40,7 +40,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: 1);
+    _pageController = PageController(initialPage: 0);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _listenForIncomingCalls();
       _listenForNewMessages();
@@ -245,8 +245,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-
-
   // ── Add Contact Dialog ──────────────────────────────────────────────
   void _showAddContactDialog(String currentUid) {
     final emailController = TextEditingController();
@@ -310,26 +308,22 @@ class _HomePageState extends State<HomePage> {
                                 width: 16,
                                 height: 16,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Color(0xFF111111)),
+                                    strokeWidth: 2, color: Color(0xFF111111)),
                               )
                             : const Icon(Icons.search_rounded, size: 18),
                         label: Text(isLoading ? 'Mencari...' : 'Cari'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFF111111),
-                          side: const BorderSide(
-                              color: Color(0xFFE5E5E5)),
+                          side: const BorderSide(color: Color(0xFFE5E5E5)),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(28),
                           ),
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         onPressed: isLoading
                             ? null
                             : () async {
-                                final email =
-                                    emailController.text.trim();
+                                final email = emailController.text.trim();
                                 if (email.isEmpty) return;
 
                                 setDialogState(() {
@@ -353,8 +347,9 @@ class _HomePageState extends State<HomePage> {
                                   return;
                                 }
 
-                                final user = await ContactService
-                                    .searchUserByEmail(email);
+                                final user =
+                                    await ContactService.searchUserByEmail(
+                                        email);
                                 if (user == null) {
                                   setDialogState(() {
                                     isLoading = false;
@@ -409,19 +404,15 @@ class _HomePageState extends State<HomePage> {
                           children: [
                             CircleAvatar(
                               radius: 22,
-                              backgroundColor:
-                                  AvatarHelper.backgroundColor(
-                                      foundUser!.username),
-                              backgroundImage:
-                                  foundUser!.photoUrl.isNotEmpty
-                                      ? NetworkImage(
-                                          foundUser!.photoUrl)
-                                      : null,
+                              backgroundColor: AvatarHelper.backgroundColor(
+                                  foundUser!.username),
+                              backgroundImage: foundUser!.photoUrl.isNotEmpty
+                                  ? NetworkImage(foundUser!.photoUrl)
+                                  : null,
                               child: foundUser!.photoUrl.isEmpty
                                   ? Text(
                                       foundUser!.username.isNotEmpty
-                                          ? foundUser!.username[0]
-                                              .toUpperCase()
+                                          ? foundUser!.username[0].toUpperCase()
                                           : '?',
                                       style: TextStyle(
                                         color: AvatarHelper.textColor(
@@ -434,8 +425,7 @@ class _HomePageState extends State<HomePage> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     foundUser!.username,
@@ -481,23 +471,20 @@ class _HomePageState extends State<HomePage> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(28),
                             ),
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
                           onPressed: requestSent
                               ? null
                               : () async {
-                                  final err = await ContactService
-                                      .sendFriendRequest(
+                                  final err =
+                                      await ContactService.sendFriendRequest(
                                     fromUid: currentUid,
                                     toUid: foundUser!.uid,
                                   );
                                   if (err != null) {
-                                    setDialogState(
-                                        () => errorMsg = err);
+                                    setDialogState(() => errorMsg = err);
                                   } else {
-                                    setDialogState(
-                                        () => requestSent = true);
+                                    setDialogState(() => requestSent = true);
                                   }
                                 },
                         ),
@@ -524,8 +511,7 @@ class _HomePageState extends State<HomePage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Text(
           'Hapus Kontak',
           style: TextStyle(
@@ -576,18 +562,28 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final currentUid = context.read<AuthService>().currentUid ?? '';
-    final titles = ['Panggilan', 'ChatKu', 'Profil'];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(titles[_currentPage]),
-        actions: [
-          if (_currentPage == 1) ..._chatActions(currentUid),
-        ],
-      ),
-      floatingActionButton: _currentPage == 1
+      appBar: _currentPage == 0
+          ? AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.menu_rounded),
+                onPressed: () {},
+              ),
+              title: const Text('ChatKu'),
+              centerTitle: true,
+              actions: [
+                ..._chatActions(currentUid),
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: () => _showNewChatMenu(currentUid),
+                ),
+              ],
+            )
+          : null,
+      floatingActionButton: _currentPage == 0
           ? FloatingActionButton(
-              backgroundColor: const Color(0xFF111111),
+              backgroundColor: const Color(0xFF0EA5E9),
               foregroundColor: Colors.white,
               elevation: 0,
               highlightElevation: 0,
@@ -613,13 +609,13 @@ class _HomePageState extends State<HomePage> {
         controller: _pageController,
         onPageChanged: _onPageChanged,
         children: [
-          const CallLogPage(),
           _ChatTab(
             currentUid: currentUid,
             onShowNewChatMenu: () => _showNewChatMenu(currentUid),
             onShowAddContact: () => _showAddContactDialog(currentUid),
             onDeleteContact: (u) => _showDeleteContactDialog(currentUid, u),
           ),
+          const CallLogPage(),
           const ProfilePage(),
         ],
       ),
@@ -635,7 +631,7 @@ class _HomePageState extends State<HomePage> {
           return IconButton(
             icon: Badge(
               isLabelVisible: count > 0,
-              backgroundColor: const Color(0xFF111111),
+              backgroundColor: const Color(0xFF0EA5E9),
               label: Text(
                 '$count',
                 style: const TextStyle(fontSize: 10, color: Colors.white),
@@ -646,8 +642,7 @@ class _HomePageState extends State<HomePage> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                    builder: (_) => const FriendRequestsPage()),
+                MaterialPageRoute(builder: (_) => const FriendRequestsPage()),
               );
             },
           );
@@ -699,7 +694,7 @@ class _GroupTile extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(2),
               decoration: const BoxDecoration(
-                color: Color(0xFF111111),
+                color: Color(0xFF0EA5E9),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -745,7 +740,7 @@ class _GroupTile extends StatelessWidget {
               width: 20,
               height: 20,
               decoration: const BoxDecoration(
-                color: Color(0xFF111111),
+                color: Color(0xFF0EA5E9),
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
@@ -769,7 +764,9 @@ class _GroupTile extends StatelessWidget {
 
   String _formatTime(DateTime date) {
     final now = DateTime.now();
-    if (date.year == now.year && date.month == now.month && date.day == now.day) {
+    if (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day) {
       return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
     }
     return '${date.day}/${date.month}';
@@ -790,63 +787,158 @@ class _BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final tabWidth = screenWidth / 3;
+    const double dotSize = 5.0;
+
     return Container(
-      margin: const EdgeInsets.fromLTRB(80, 0, 80, 28),
-      padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF111111),
-        borderRadius: BorderRadius.circular(40),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          // Phone tab
-          GestureDetector(
-            onTap: () => onTap(0),
-            behavior: HitTestBehavior.opaque,
-            child: Badge(
-              isLabelVisible: missedCallCount > 0,
-              backgroundColor: const Color(0xFFFF3B30),
-              label: Text('$missedCallCount',
-                  style: const TextStyle(fontSize: 9, color: Colors.white)),
-              child: Icon(
-                currentIndex == 0 ? Icons.phone_rounded : Icons.phone_outlined,
-                color: currentIndex == 0
-                    ? Colors.white
-                    : Colors.white.withValues(alpha: 0.45),
-                size: 22,
-              ),
-            ),
-          ),
-          // Chat tab
-          GestureDetector(
-            onTap: () => onTap(1),
-            behavior: HitTestBehavior.opaque,
-            child: Icon(
-              currentIndex == 1
-                  ? Icons.chat_bubble_rounded
-                  : Icons.chat_bubble_outline_rounded,
-              color: currentIndex == 1
-                  ? Colors.white
-                  : Colors.white.withValues(alpha: 0.45),
-              size: 22,
-            ),
-          ),
-          // Profile tab
-          GestureDetector(
-            onTap: () => onTap(2),
-            behavior: HitTestBehavior.opaque,
-            child: Icon(
-              currentIndex == 2
-                  ? Icons.person_rounded
-                  : Icons.person_outline_rounded,
-              color: currentIndex == 2
-                  ? Colors.white
-                  : Colors.white.withValues(alpha: 0.45),
-              size: 22,
-            ),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
           ),
         ],
+      ),
+      child: SafeArea(
+        child: SizedBox(
+          height: 60,
+          child: Stack(
+            children: [
+              Row(
+                children: [
+                  _BounceTabItem(
+                    icon: currentIndex == 0
+                        ? Icons.chat_bubble_rounded
+                        : Icons.chat_bubble_outline_rounded,
+                    isActive: currentIndex == 0,
+                    onTap: () => onTap(0),
+                  ),
+                  _BounceTabItem(
+                    icon: currentIndex == 1
+                        ? Icons.phone_rounded
+                        : Icons.phone_outlined,
+                    isActive: currentIndex == 1,
+                    badgeCount: missedCallCount,
+                    onTap: () => onTap(1),
+                  ),
+                  _BounceTabItem(
+                    icon: currentIndex == 2
+                        ? Icons.person_rounded
+                        : Icons.person_outline_rounded,
+                    isActive: currentIndex == 2,
+                    onTap: () => onTap(2),
+                  ),
+                ],
+              ),
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                bottom: 8,
+                left: (tabWidth * currentIndex) + (tabWidth / 2) - (dotSize / 2),
+                child: Container(
+                  width: dotSize,
+                  height: dotSize,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF0EA5E9),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+}
+
+class _BounceTabItem extends StatefulWidget {
+  final IconData icon;
+  final bool isActive;
+  final int badgeCount;
+  final VoidCallback onTap;
+
+  const _BounceTabItem({
+    required this.icon,
+    required this.isActive,
+    required this.onTap,
+    this.badgeCount = 0,
+  });
+
+  @override
+  State<_BounceTabItem> createState() => _BounceTabItemState();
+}
+
+class _BounceTabItemState extends State<_BounceTabItem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.8).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => _controller.forward(),
+        onTapUp: (_) {
+          _controller.reverse();
+          widget.onTap();
+        },
+        onTapCancel: () => _controller.reverse(),
+        child: Center(
+          child: AnimatedSlide(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            offset: widget.isActive ? const Offset(0, -0.2) : Offset.zero,
+            child: ScaleTransition(
+              scale: _scaleAnimation,
+              child: widget.badgeCount > 0
+                  ? Badge(
+                      backgroundColor: const Color(0xFFFF3B30),
+                      label: Text(
+                        '${widget.badgeCount}',
+                        style: const TextStyle(fontSize: 9, color: Colors.white),
+                      ),
+                      child: Icon(
+                        widget.icon,
+                        color: widget.isActive
+                            ? const Color(0xFF0EA5E9)
+                            : const Color(0xFF999999),
+                        size: 26,
+                      ),
+                    )
+                  : Icon(
+                      widget.icon,
+                      color: widget.isActive
+                          ? const Color(0xFF0EA5E9)
+                          : const Color(0xFF999999),
+                      size: 26,
+                    ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -869,8 +961,7 @@ class _MenuOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
       leading: Container(
         width: 44,
         height: 44,
@@ -918,8 +1009,7 @@ class _ChatTab extends StatefulWidget {
   State<_ChatTab> createState() => _ChatTabState();
 }
 
-class _ChatTabState extends State<_ChatTab>
-    with AutomaticKeepAliveClientMixin {
+class _ChatTabState extends State<_ChatTab> with AutomaticKeepAliveClientMixin {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   Map<String, Timestamp> _userLastMessageTimes = {};
@@ -973,7 +1063,8 @@ class _ChatTabState extends State<_ChatTab>
             onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
             decoration: InputDecoration(
               hintText: 'Cari kontak atau grup...',
-              hintStyle: const TextStyle(color: Color(0xFF999999), fontSize: 14),
+              hintStyle:
+                  const TextStyle(color: Color(0xFF999999), fontSize: 14),
               prefixIcon: const Icon(Icons.search_rounded,
                   size: 20, color: Color(0xFF999999)),
               suffixIcon: _searchQuery.isNotEmpty
@@ -1017,9 +1108,7 @@ class _ChatTabState extends State<_ChatTab>
                             return item.username
                                     .toLowerCase()
                                     .contains(_searchQuery) ||
-                                item.email
-                                    .toLowerCase()
-                                    .contains(_searchQuery);
+                                item.email.toLowerCase().contains(_searchQuery);
                           } else if (item is GroupModel) {
                             return item.name
                                 .toLowerCase()
@@ -1114,8 +1203,7 @@ class _ChatTabState extends State<_ChatTab>
                               ),
                             );
                           },
-                          onLongPress: () =>
-                              widget.onDeleteContact(item),
+                          onLongPress: () => widget.onDeleteContact(item),
                         );
                       } else if (item is GroupModel) {
                         return _GroupTile(

@@ -17,16 +17,19 @@ class _RegisterPageState extends State<RegisterPage> {
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   File? _photoFile;
   bool _loading = false;
   bool _obscure = true;
+  bool _obscureConfirm = true;
 
   @override
   void dispose() {
     _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -63,8 +66,8 @@ class _RegisterPageState extends State<RegisterPage> {
           content: Text(error),
           backgroundColor: const Color(0xFFFF3B30),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(28)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         ),
       );
     } else {
@@ -80,102 +83,69 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: const BackButton(),
-        title: const Text('Buat Akun'),
-      ),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28),
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 16),
+                const SizedBox(height: 50),
+                // Logo
+                Center(
+                  child: Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0EA5E9),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: const Icon(
+                      Icons.chat_bubble,
+                      color: Colors.white,
+                      size: 36,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 28),
                 const Text(
-                  'Bergabung dengan\nChatKu',
+                  'Buat Akun Baru',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 26,
+                    fontSize: 28,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF111111),
+                    color: Color(0xFF1E1E1E),
                     height: 1.2,
                     letterSpacing: -0.5,
                   ),
                 ),
-                const SizedBox(height: 32),
-                // Photo picker
-                Center(
-                  child: GestureDetector(
-                    onTap: _pickPhoto,
-                    child: Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 44,
-                          backgroundColor: const Color(0xFFF5F5F5),
-                          backgroundImage: _photoFile != null
-                              ? FileImage(_photoFile!)
-                              : null,
-                          child: _photoFile == null
-                              ? const Icon(
-                                  Icons.person_outline_rounded,
-                                  size: 40,
-                                  color: Color(0xFF999999),
-                                )
-                              : null,
-                        ),
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: Container(
-                            width: 28,
-                            height: 28,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF111111),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt_rounded,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Daftar untuk memulai chat',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF999999),
                   ),
                 ),
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: GestureDetector(
-                      onTap: _pickPhoto,
-                      child: const Text(
-                        'Pilih foto profil (opsional)',
-                        style: TextStyle(
-                          color: Color(0xFF999999),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Username
+                const SizedBox(height: 36),
+                // Nama Lengkap
                 TextFormField(
                   controller: _usernameController,
                   decoration: const InputDecoration(
-                    hintText: 'Username',
+                    hintText: 'Nama Lengkap',
                     hintStyle: TextStyle(color: Color(0xFF999999)),
                     prefixIcon: Icon(Icons.person_outline_rounded,
                         size: 20, color: Color(0xFF999999)),
                   ),
                   validator: (v) {
                     if (v == null || v.isEmpty) {
-                      return 'Username wajib diisi';
+                      return 'Nama wajib diisi';
                     }
                     if (v.length < 3) {
-                      return 'Username minimal 3 karakter';
+                      return 'Nama minimal 3 karakter';
                     }
                     return null;
                   },
@@ -208,8 +178,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   obscureText: _obscure,
                   decoration: InputDecoration(
                     hintText: 'Password',
-                    hintStyle:
-                        const TextStyle(color: Color(0xFF999999)),
+                    hintStyle: const TextStyle(color: Color(0xFF999999)),
                     prefixIcon: const Icon(Icons.lock_outline_rounded,
                         size: 20, color: Color(0xFF999999)),
                     suffixIcon: IconButton(
@@ -220,8 +189,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         size: 20,
                         color: const Color(0xFF999999),
                       ),
-                      onPressed: () =>
-                          setState(() => _obscure = !_obscure),
+                      onPressed: () => setState(() => _obscure = !_obscure),
                     ),
                   ),
                   validator: (v) {
@@ -234,7 +202,40 @@ class _RegisterPageState extends State<RegisterPage> {
                     return null;
                   },
                 ),
+                const SizedBox(height: 14),
+                // Konfirmasi Password
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  obscureText: _obscureConfirm,
+                  decoration: InputDecoration(
+                    hintText: 'Konfirmasi Password',
+                    hintStyle: const TextStyle(color: Color(0xFF999999)),
+                    prefixIcon: const Icon(Icons.lock_outline_rounded,
+                        size: 20, color: Color(0xFF999999)),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirm
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        size: 20,
+                        color: const Color(0xFF999999),
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscureConfirm = !_obscureConfirm),
+                    ),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) {
+                      return 'Konfirmasi password wajib diisi';
+                    }
+                    if (v != _passwordController.text) {
+                      return 'Password tidak cocok';
+                    }
+                    return null;
+                  },
+                ),
                 const SizedBox(height: 32),
+                // Daftar button
                 ElevatedButton(
                   onPressed: _loading ? null : _register,
                   child: _loading
@@ -246,7 +247,28 @@ class _RegisterPageState extends State<RegisterPage> {
                             strokeWidth: 2,
                           ),
                         )
-                      : const Text('Daftar Sekarang'),
+                      : const Text('Daftar'),
+                ),
+                const SizedBox(height: 24),
+                // Login link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Sudah punya akun? ',
+                      style: TextStyle(color: Color(0xFF999999)),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: const Text(
+                        'Masuk',
+                        style: TextStyle(
+                          color: Color(0xFF0EA5E9),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 32),
               ],

@@ -92,7 +92,7 @@ class UserTile extends StatelessWidget {
                         width: 20,
                         height: 20,
                         decoration: const BoxDecoration(
-                          color: Color(0xFF111111),
+                          color: Color(0xFF0EA5E9),
                           shape: BoxShape.circle,
                         ),
                         alignment: Alignment.center,
