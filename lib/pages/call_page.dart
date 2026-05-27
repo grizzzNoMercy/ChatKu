@@ -139,7 +139,8 @@ class _CallPageState extends State<CallPage> {
     _disposed = true;
     _timer?.cancel();
     SoundService.instance.stopRingback();
-    _callService.cleanup();
+    // Use endCall to ensure log is saved before cleanup
+    _callService.endCall();
     _localRenderer.dispose();
     _remoteRenderer.dispose();
     super.dispose();

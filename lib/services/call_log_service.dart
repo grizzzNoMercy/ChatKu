@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/call_log_model.dart';
 
 class CallLogService {
@@ -18,11 +19,9 @@ class CallLogService {
     required bool wasAnswered,
     required int durationSeconds,
   }) async {
-    final batch = _firestore.batch();
-    final ref = _firestore.collection(_collection).doc();
+    debugPrint('[CallLogService] saveLog called: caller=$callerId, receiver=$receiverId, answered=$wasAnswered');
 
-    // Outgoing log (from caller's perspective)
-    final outgoingData = CallLogModel(
+    final data = CallLogModel(
       id: '',
       callerId: callerId,
       callerName: callerName,
@@ -36,10 +35,13 @@ class CallLogService {
       timestamp: Timestamp.now(),
     ).toMap();
 
-    // We store ONE document per call with both sides' info.
-    // Each user queries where participants arrayContains their uid.
-    batch.set(ref, outgoingData);
-    await batch.commit();
+    try {
+      await _firestore.collection(_collection).add(data);
+      debugPrint('[CallLogService] Log saved to Firestore successfully');
+    } catch (e) {
+      debugPrint('[CallLogService] ERROR saving log: $e');
+      rethrow;
+    }
   }
 
   /// Stream of call logs for [currentUid], newest first.
