@@ -49,34 +49,38 @@ class CallLogService {
     return _firestore
         .collection(_collection)
         .where('participants', arrayContains: currentUid)
-        .limit(100)
         .snapshots()
         .map((snap) {
-      final logs = snap.docs
-          .map((d) => CallLogModel.fromMap(d.id, d.data()))
-          .toList();
-      // Sort client-side to avoid needing a composite Firestore index
-      logs.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      return logs;
-    });
+          final list = snap.docs
+              .map((d) => CallLogModel.fromMap(d.id, d.data()))
+              .toList();
+          // Sort client-side (newest first) to avoid requiring a composite index in Firestore
+          list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+          return list.take(100).toList();
+        });
   }
 
   /// Count of missed calls for [currentUid] since [since].
   static Stream<int> missedCallCountStream(
       String currentUid, DateTime since) {
-    final sinceTs = Timestamp.fromDate(since);
     return _firestore
         .collection(_collection)
         .where('participants', arrayContains: currentUid)
         .snapshots()
-        .map((s) => s.docs.where((doc) {
-              final data = doc.data();
-              return data['receiverId'] == currentUid &&
-                  data['status'] == 'missed' &&
-                  (data['timestamp'] as Timestamp?)
-                          ?.compareTo(sinceTs) ==
-                      1;
-            }).length);
+        .map((snap) {
+          final sinceTs = Timestamp.fromDate(since);
+          return snap.docs.where((doc) {
+            final data = doc.data();
+            final receiverId = data['receiverId'] as String? ?? '';
+            final status = data['status'] as String? ?? '';
+            final ts = data['timestamp'] as Timestamp?;
+            
+            return receiverId == currentUid &&
+                status == 'missed' &&
+                ts != null &&
+                ts.compareTo(sinceTs) > 0;
+          }).length;
+        });
   }
 
   /// Delete a single log entry.

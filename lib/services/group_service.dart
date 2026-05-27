@@ -174,6 +174,7 @@ class GroupService {
     batch.update(_firestore.collection('groups').doc(groupId), {
       'lastMessage': message,
       'lastTimestamp': Timestamp.now(),
+      'lastSenderId': senderId,
     });
     await batch.commit();
   }

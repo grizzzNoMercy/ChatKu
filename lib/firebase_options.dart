@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -53,10 +50,20 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBZThTHclmmAo4Ibx5_8FFD2N6sNuA-07s',
-    appId: '1:578525378702:android:5a3389f9bb52452c2771df',
-    messagingSenderId: '578525378702',
-    projectId: 'device-streaming-7eb5cc3d',
-    storageBucket: 'device-streaming-7eb5cc3d.firebasestorage.app',
+    apiKey: 'AIzaSyCwocbHvt7zYPWv9JEW-ed1z_KxVZzP4gE',
+    appId: '1:988535490987:android:603962c74124947f2e6aee',
+    messagingSenderId: '988535490987',
+    projectId: 'chatku-3e521',
+    storageBucket: 'chatku-3e521.firebasestorage.app',
+  );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: "AIzaSyCLDPaH9DU09zqTyypCAsZfnJDuyfLIYMk",
+    authDomain: "chatku-3e521.firebaseapp.com",
+    projectId: "chatku-3e521",
+    storageBucket: "chatku-3e521.firebasestorage.app",
+    messagingSenderId: "988535490987",
+    appId: "1:988535490987:web:2bdd4377cfc83dc02e6aee",
+    measurementId: "G-XHNQSTQQT7",
   );
 }

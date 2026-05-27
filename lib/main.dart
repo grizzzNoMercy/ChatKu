@@ -4,19 +4,12 @@ import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
 import 'services/presence_service.dart';
 import 'pages/splash_page.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-    options: const FirebaseOptions(
-      apiKey: "AIzaSyCLDPaH9DU09zqTyypCAsZfnJDuyfLIYMk",
-      authDomain: "chatku-3e521.firebaseapp.com",
-      projectId: "chatku-3e521",
-      storageBucket: "chatku-3e521.firebasestorage.app",
-      messagingSenderId: "988535490987",
-      appId: "1:988535490987:web:2bdd4377cfc83dc02e6aee",
-      measurementId: "G-XHNQSTQQT7",
-    ),
+    options: DefaultFirebaseOptions.currentPlatform,
   );
   runApp(const ChatKuApp());
 }

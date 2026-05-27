@@ -143,6 +143,7 @@ class ChatService {
     batch.update(_firestore.collection('chat_rooms').doc(roomId), {
       'lastMessage': message,
       'lastTimestamp': Timestamp.now(),
+      'lastSenderId': senderId,
     });
     await batch.commit();
   }
