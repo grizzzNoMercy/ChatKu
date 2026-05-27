@@ -45,7 +45,7 @@ class _SplashPageState extends State<SplashPage>
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       // Set online
-      await FirebaseFirestore.instance
+      FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .update({'online': true, 'lastSeen': Timestamp.now()})
