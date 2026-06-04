@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "988535490987",
+    "project_id": "chatku-3e521",
+    "storage_bucket": "chatku-3e521.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:988535490987:android:603962c74124947f2e6aee",
+        "android_client_info": {
+          "package_name": "com.example.chatsphere"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCwocbHvt7zYPWv9JEW-ed1z_KxVZzP4gE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
