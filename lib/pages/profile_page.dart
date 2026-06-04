@@ -9,7 +9,6 @@ import '../utils/avatar_helper.dart';
 import 'login_page.dart';
 import 'edit_profile_page.dart';
 
-
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -37,8 +36,6 @@ class _ProfilePageState extends State<ProfilePage> {
       });
     }
   }
-
-
 
   Future<void> _logout() async {
     final confirm = await showDialog<bool>(
@@ -79,7 +76,6 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +170,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0EA5E9),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 36, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(24),
                       ),
@@ -281,7 +278,8 @@ class _ProfilePageState extends State<ProfilePage> {
           fontSize: 13,
         ),
       ),
-      trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFFCCCCCC)),
+      trailing:
+          const Icon(Icons.chevron_right_rounded, color: Color(0xFFCCCCCC)),
     );
   }
 }
