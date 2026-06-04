@@ -19,13 +19,16 @@ class CallLogPage extends StatelessWidget {
         surfaceTintColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
-        centerTitle: true,
-        title: const Text(
-          'ChatKu',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-            color: Color(0xFF0EA5E9),
+        centerTitle: false,
+        title: const Padding(
+          padding: EdgeInsets.only(left: 4), // Menyesuaikan agar sejajar dengan search bar di bawahnya
+          child: Text(
+            'Calls',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF111111),
+            ),
           ),
         ),
         actions: [
@@ -72,17 +75,6 @@ class CallLogPage extends StatelessWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
-            child: Text(
-              'Calls',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF111111),
-              ),
-            ),
-          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: TextField(

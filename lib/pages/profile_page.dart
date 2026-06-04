@@ -86,13 +86,16 @@ class _ProfilePageState extends State<ProfilePage> {
         surfaceTintColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
-        centerTitle: true,
-        title: const Text(
-          'ChatKu',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-            color: Color(0xFF0EA5E9),
+        centerTitle: false,
+        title: const Padding(
+          padding: EdgeInsets.only(left: 4),
+          child: Text(
+            'Profile', // <--- Pindahkan judul halaman ke sini
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF111111),
+            ),
           ),
         ),
       ),
@@ -105,18 +108,6 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Profile',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF111111),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
                   CircleAvatar(
                     radius: 52,
                     backgroundColor: const Color(0xFF0EA5E9),
@@ -216,7 +207,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     subtitle: 'English',
                     onTap: () {},
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 80),
                   OutlinedButton.icon(
                     onPressed: _logout,
                     icon: const Icon(
