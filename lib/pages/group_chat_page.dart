@@ -64,10 +64,24 @@ class _GroupChatPageState extends State<GroupChatPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+          0.0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
+      }
+    });
+  }
+
+  void _scrollToBottomIfNear() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        if (_scrollController.position.pixels < 150) {
+          _scrollController.animateTo(
+            0.0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
       }
     });
   }
@@ -232,12 +246,10 @@ class _GroupChatPageState extends State<GroupChatPage> {
                     messages.length > _previousMessageCount;
 
                 if (messages.isNotEmpty) {
-                  if (_previousMessageCount == -1) {
-                    _scrollToBottom();
-                  } else if (hasNewMessages) {
+                  if (_previousMessageCount != -1 && hasNewMessages) {
                     GroupService.markGroupAsRead(
                         widget.initialGroup.id, widget.currentUid);
-                    _scrollToBottom();
+                    _scrollToBottomIfNear();
                   }
                 }
                 _previousMessageCount = messages.length;
@@ -264,16 +276,19 @@ class _GroupChatPageState extends State<GroupChatPage> {
                     ),
                   );
                 }
+                final reversedMessages = messages.reversed.toList();
+                
                 return ListView.builder(
                   controller: _scrollController,
+                  reverse: true,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  itemCount: messages.length,
+                  itemCount: reversedMessages.length,
                   itemBuilder: (context, i) {
-                    final msg = messages[i];
+                    final msg = reversedMessages[i];
                     final isMe = msg.senderId == widget.currentUid;
-                    final showDate = i == 0 ||
-                        messages[i].timestamp.toDate().day !=
-                            messages[i - 1].timestamp.toDate().day;
+                    final showDate = i == reversedMessages.length - 1 ||
+                        reversedMessages[i].timestamp.toDate().day !=
+                            reversedMessages[i + 1].timestamp.toDate().day;
                     
                     final senderName = _membersMap[msg.senderId]?.username ?? 'Anggota';
 

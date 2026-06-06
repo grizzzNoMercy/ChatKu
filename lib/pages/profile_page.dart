@@ -80,31 +80,25 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  void _showComingSoon() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Fitur ini akan segera hadir!'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        centerTitle: true,
-        title: const Text(
-          'ChatKu',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-            color: Color(0xFF0EA5E9),
-          ),
-        ),
-      ),
-      body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF0EA5E9)),
-            )
-          : SingleChildScrollView(
+      body: SafeArea(
+        child: _loading
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF0EA5E9)),
+              )
+            : SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -189,35 +183,35 @@ class _ProfilePageState extends State<ProfilePage> {
                     icon: Icons.notifications_none_rounded,
                     title: 'Notifications',
                     subtitle: 'Manage notification settings',
-                    onTap: () {},
+                    onTap: _showComingSoon,
                   ),
                   const SizedBox(height: 8),
                   _buildSettingItem(
                     icon: Icons.lock_outline_rounded,
                     title: 'Privacy',
                     subtitle: 'Control your privacy settings',
-                    onTap: () {},
+                    onTap: _showComingSoon,
                   ),
                   const SizedBox(height: 8),
                   _buildSettingItem(
                     icon: Icons.shield_outlined,
                     title: 'Security',
                     subtitle: 'Manage security options',
-                    onTap: () {},
+                    onTap: _showComingSoon,
                   ),
                   const SizedBox(height: 8),
                   _buildSettingItem(
                     icon: Icons.palette_outlined,
                     title: 'Appearance',
                     subtitle: 'Customize app theme',
-                    onTap: () {},
+                    onTap: _showComingSoon,
                   ),
                   const SizedBox(height: 8),
                   _buildSettingItem(
                     icon: Icons.language_rounded,
                     title: 'Language',
                     subtitle: 'English',
-                    onTap: () {},
+                    onTap: _showComingSoon,
                   ),
                   const SizedBox(height: 24),
                   OutlinedButton.icon(
@@ -246,6 +240,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             ),
+      ),
     );
   }
 

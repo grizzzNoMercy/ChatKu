@@ -74,7 +74,7 @@ class _ChatPageState extends State<ChatPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+          0.0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
@@ -85,13 +85,9 @@ class _ChatPageState extends State<ChatPage> {
   void _scrollToBottomIfNear() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        final position = _scrollController.position;
-        final distanceFromBottom =
-            position.maxScrollExtent - position.pixels;
-        // Only auto-scroll if user is within 150px of the bottom
-        if (distanceFromBottom < 150) {
+        if (_scrollController.position.pixels < 150) {
           _scrollController.animateTo(
-            position.maxScrollExtent,
+            0.0,
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOut,
           );
@@ -344,13 +340,9 @@ class _ChatPageState extends State<ChatPage> {
                   }
                 }
 
-                // Auto-scroll only on first load or when new messages arrive
-                // and user is near the bottom
+                // Auto-scroll only when new messages arrive and user is near the bottom
                 if (messages.isNotEmpty) {
-                  if (_previousMessageCount == -1) {
-                    // First load: scroll to bottom
-                    _scrollToBottom();
-                  } else if (hasNewMessages) {
+                  if (_previousMessageCount != -1 && hasNewMessages) {
                     // New message arrived while user is in chat: mark as read
                     ChatService.markRoomAsRead(_roomId, widget.currentUid);
                     // only scroll if user is near bottom
@@ -381,19 +373,22 @@ class _ChatPageState extends State<ChatPage> {
                     ),
                   );
                 }
+                final reversedMessages = messages.reversed.toList();
+                
                 return ListView.builder(
                   controller: _scrollController,
+                  reverse: true,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 8,
                   ),
-                  itemCount: messages.length,
+                  itemCount: reversedMessages.length,
                   itemBuilder: (context, i) {
-                    final msg = messages[i];
+                    final msg = reversedMessages[i];
                     final isMe = msg.senderId == widget.currentUid;
-                    final showDate = i == 0 ||
-                        messages[i].timestamp.toDate().day !=
-                            messages[i - 1].timestamp.toDate().day;
+                    final showDate = i == reversedMessages.length - 1 ||
+                        reversedMessages[i].timestamp.toDate().day !=
+                            reversedMessages[i + 1].timestamp.toDate().day;
                     return Column(
                       children: [
                         if (showDate)

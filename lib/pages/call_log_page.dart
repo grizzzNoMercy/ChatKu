@@ -6,86 +6,87 @@ import '../services/auth_service.dart';
 import '../services/call_log_service.dart';
 import '../utils/avatar_helper.dart';
 
-class CallLogPage extends StatelessWidget {
+class CallLogPage extends StatefulWidget {
   const CallLogPage({super.key});
+
+  @override
+  State<CallLogPage> createState() => _CallLogPageState();
+}
+
+class _CallLogPageState extends State<CallLogPage> {
+  String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
     final currentUid = context.read<AuthService>().currentUid ?? '';
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        centerTitle: true,
-        title: const Text(
-          'ChatKu',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-            color: Color(0xFF0EA5E9),
-          ),
-        ),
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert_rounded,
-                color: Color(0xFF111111)),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14)),
-            onSelected: (v) async {
-              if (v == 'clear') {
-                final ok = await _confirmClear(context);
-                if (ok && context.mounted) {
-                  await CallLogService.clearAllLogs(currentUid);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Semua log panggilan dihapus'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  }
-                }
-              }
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(
-                value: 'clear',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete_sweep_rounded,
-                        color: Color(0xFFFF3B30), size: 20),
-                    SizedBox(width: 10),
-                    Text(
-                      'Hapus Semua',
-                      style: TextStyle(color: Color(0xFFFF3B30)),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 10, 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Calls',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF111111),
                     ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
-            child: Text(
-              'Calls',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF111111),
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert_rounded,
+                        color: Color(0xFF111111)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                    onSelected: (v) async {
+                      if (v == 'clear') {
+                        final ok = await _confirmClear(context);
+                        if (ok && context.mounted) {
+                          await CallLogService.clearAllLogs(currentUid);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Semua log panggilan dihapus'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        }
+                      }
+                    },
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(
+                        value: 'clear',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_sweep_rounded,
+                                color: Color(0xFFFF3B30), size: 20),
+                            SizedBox(width: 10),
+                            Text(
+                              'Hapus Semua',
+                              style: TextStyle(color: Color(0xFFFF3B30)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: TextField(
+              onChanged: (val) {
+                setState(() {
+                  _searchQuery = val.toLowerCase();
+                });
+              },
               decoration: InputDecoration(
                 hintText: 'Search calls...',
                 hintStyle: const TextStyle(color: Color(0xFF999999), fontSize: 14),
@@ -137,9 +138,25 @@ class CallLogPage extends StatelessWidget {
             );
           }
 
-          final logs = snap.data ?? [];
+          final allLogs = snap.data ?? [];
+          final logs = allLogs.where((log) {
+            if (_searchQuery.isEmpty) return true;
+            final name = log.otherName(currentUid).toLowerCase();
+            return name.contains(_searchQuery);
+          }).toList();
 
           if (logs.isEmpty) {
+            if (_searchQuery.isNotEmpty) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 40),
+                  child: Text(
+                    'Tidak ada hasil untuk "$_searchQuery"',
+                    style: const TextStyle(color: Color(0xFF999999), fontSize: 14),
+                  ),
+                ),
+              );
+            }
             return _EmptyState();
           }
 
@@ -171,7 +188,8 @@ class CallLogPage extends StatelessWidget {
         },
       ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
