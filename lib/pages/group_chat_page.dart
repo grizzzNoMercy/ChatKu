@@ -109,10 +109,12 @@ class _GroupChatPageState extends State<GroupChatPage> {
     );
     if (picked == null || !mounted) return;
     setState(() => _sending = true);
+    final bytes = await picked.readAsBytes();
     await GroupService.sendImage(
       groupId: widget.initialGroup.id,
       senderId: widget.currentUid,
-      file: File(picked.path),
+      bytes: bytes,
+      fileName: picked.name,
     );
     setState(() => _sending = false);
     _scrollToBottom();
@@ -124,10 +126,12 @@ class _GroupChatPageState extends State<GroupChatPage> {
     final picked = await picker.pickVideo(source: ImageSource.gallery);
     if (picked == null || !mounted) return;
     setState(() => _sending = true);
+    final bytes = await picked.readAsBytes();
     await GroupService.sendVideo(
       groupId: widget.initialGroup.id,
       senderId: widget.currentUid,
-      file: File(picked.path),
+      bytes: bytes,
+      fileName: picked.name,
     );
     setState(() => _sending = false);
     _scrollToBottom();
@@ -138,15 +142,16 @@ class _GroupChatPageState extends State<GroupChatPage> {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'docx', 'zip', 'txt'],
+      withData: true,
     );
     if (result == null || result.files.isEmpty || !mounted) return;
     final file = result.files.first;
-    if (file.path == null) return;
+    if (file.bytes == null) return;
     setState(() => _sending = true);
     await GroupService.sendFile(
       groupId: widget.initialGroup.id,
       senderId: widget.currentUid,
-      file: File(file.path!),
+      bytes: file.bytes!,
       fileName: file.name,
     );
     setState(() => _sending = false);

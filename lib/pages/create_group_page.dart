@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -18,7 +19,7 @@ class CreateGroupPage extends StatefulWidget {
 class _CreateGroupPageState extends State<CreateGroupPage> {
   final _nameController = TextEditingController();
   final Set<String> _selectedUids = {};
-  File? _photoFile;
+  Uint8List? _photoBytes;
   bool _loading = false;
   String _searchQuery = '';
 
@@ -37,7 +38,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
       imageQuality: 80,
     );
     if (picked != null) {
-      setState(() => _photoFile = File(picked.path));
+      final bytes = await picked.readAsBytes();
+      setState(() => _photoBytes = bytes);
     }
   }
 
@@ -69,7 +71,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
       name: name,
       adminId: currentUid,
       memberIds: _selectedUids.toList(),
-      photoFile: _photoFile,
+      photoBytes: _photoBytes,
     );
 
     if (!mounted) return;
@@ -132,8 +134,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         radius: 32,
                         backgroundColor: const Color(0xFFF5F5F5),
                         backgroundImage:
-                            _photoFile != null ? FileImage(_photoFile!) : null,
-                        child: _photoFile == null
+                            _photoBytes != null ? MemoryImage(_photoBytes!) : null,
+                        child: _photoBytes == null
                             ? const Icon(Icons.group_outlined,
                                 size: 28, color: Color(0xFF999999))
                             : null,

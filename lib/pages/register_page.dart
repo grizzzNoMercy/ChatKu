@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -19,7 +20,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  File? _photoFile;
+  Uint8List? _photoBytes;
   bool _loading = false;
   bool _obscure = true;
   bool _obscureConfirm = true;
@@ -42,7 +43,8 @@ class _RegisterPageState extends State<RegisterPage> {
       imageQuality: 80,
     );
     if (picked != null) {
-      setState(() => _photoFile = File(picked.path));
+      final bytes = await picked.readAsBytes();
+      setState(() => _photoBytes = bytes);
     }
   }
 
@@ -54,7 +56,7 @@ class _RegisterPageState extends State<RegisterPage> {
           username: _usernameController.text.trim(),
           email: _emailController.text.trim(),
           password: _passwordController.text,
-          photoFile: _photoFile,
+          photoBytes: _photoBytes,
         );
 
     if (!mounted) return;
@@ -93,19 +95,33 @@ class _RegisterPageState extends State<RegisterPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 50),
-                // Logo
-                Center(
-                  child: Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0EA5E9),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: const Icon(
-                      Icons.chat_bubble,
-                      color: Colors.white,
-                      size: 36,
+                // Avatar Picker
+                GestureDetector(
+                  onTap: _pickPhoto,
+                  child: Center(
+                    child: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundColor: const Color(0xFFE5E5E5),
+                          backgroundImage: _photoBytes != null ? MemoryImage(_photoBytes!) : null,
+                          child: _photoBytes == null
+                              ? const Icon(Icons.person_outline_rounded, size: 40, color: Color(0xFF999999))
+                              : null,
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF0EA5E9),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 14),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

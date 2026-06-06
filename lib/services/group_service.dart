@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/group_model.dart';
 import '../models/message_model.dart';
@@ -12,16 +13,18 @@ class GroupService {
     required String name,
     required String adminId,
     required List<String> memberIds,
-    File? photoFile,
+    Uint8List? photoBytes,
+    String photoExtension = '.jpg',
   }) async {
     try {
       final docRef = _firestore.collection('groups').doc();
       String photoUrl = '';
 
-      if (photoFile != null) {
+      if (photoBytes != null) {
         photoUrl = await StorageService.uploadGroupPhoto(
           groupId: docRef.id,
-          file: photoFile,
+          bytes: photoBytes,
+          extension: photoExtension,
         );
       }
 
@@ -85,12 +88,14 @@ class GroupService {
   static Future<void> sendImage({
     required String groupId,
     required String senderId,
-    required File file,
+    required Uint8List bytes,
+    required String fileName,
   }) async {
     final url = await StorageService.uploadChatFile(
       roomId: groupId,
-      file: file,
+      bytes: bytes,
       type: 'group_images',
+      fileName: fileName,
     );
     await _ensureAndSend(
       groupId: groupId,
@@ -105,12 +110,14 @@ class GroupService {
   static Future<void> sendVideo({
     required String groupId,
     required String senderId,
-    required File file,
+    required Uint8List bytes,
+    required String fileName,
   }) async {
     final url = await StorageService.uploadChatFile(
       roomId: groupId,
-      file: file,
+      bytes: bytes,
       type: 'group_videos',
+      fileName: fileName,
     );
     await _ensureAndSend(
       groupId: groupId,
@@ -125,12 +132,12 @@ class GroupService {
   static Future<void> sendFile({
     required String groupId,
     required String senderId,
-    required File file,
+    required Uint8List bytes,
     required String fileName,
   }) async {
     final url = await StorageService.uploadChatFile(
       roomId: groupId,
-      file: file,
+      bytes: bytes,
       type: 'group_files',
       fileName: fileName,
     );

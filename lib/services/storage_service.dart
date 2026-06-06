@@ -1,38 +1,53 @@
 import 'dart:io';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:typed_data';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:path/path.dart' as p;
 
 class StorageService {
-  static final FirebaseStorage _storage = FirebaseStorage.instance;
+  static final SupabaseClient _supabase = Supabase.instance.client;
+  static const String _bucketName = 'ChatKu_media'; // Pastikan nama bucket di Supabase adalah 'ChatKu_media'
 
   static Future<String> uploadProfilePhoto({
     required String uid,
-    required File file,
+    required Uint8List bytes,
+    String extension = '.jpg',
   }) async {
-    final ref = _storage.ref().child('profiles/$uid/avatar.jpg');
-    await ref.putFile(file);
-    return await ref.getDownloadURL();
+    final path = 'profiles/$uid/avatar$extension';
+    await _supabase.storage.from(_bucketName).uploadBinary(
+      path, 
+      bytes,
+      fileOptions: const FileOptions(upsert: true), // overwrite if exists
+    );
+    return _supabase.storage.from(_bucketName).getPublicUrl(path);
   }
 
   static Future<String> uploadGroupPhoto({
     required String groupId,
-    required File file,
+    required Uint8List bytes,
+    String extension = '.jpg',
   }) async {
-    final ref = _storage.ref().child('groups/$groupId/avatar.jpg');
-    await ref.putFile(file);
-    return await ref.getDownloadURL();
+    final path = 'groups/$groupId/avatar$extension';
+    await _supabase.storage.from(_bucketName).uploadBinary(
+      path, 
+      bytes,
+      fileOptions: const FileOptions(upsert: true),
+    );
+    return _supabase.storage.from(_bucketName).getPublicUrl(path);
   }
 
   static Future<String> uploadChatFile({
     required String roomId,
-    required File file,
+    required Uint8List bytes,
     required String type,
-    String? fileName,
+    required String fileName,
   }) async {
-    final name = fileName ?? p.basename(file.path);
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final ref = _storage.ref().child('chats/$roomId/$type/${timestamp}_$name');
-    await ref.putFile(file);
-    return await ref.getDownloadURL();
+    final path = 'chats/$roomId/$type/${timestamp}_$fileName';
+    await _supabase.storage.from(_bucketName).uploadBinary(
+      path, 
+      bytes,
+      fileOptions: const FileOptions(upsert: true),
+    );
+    return _supabase.storage.from(_bucketName).getPublicUrl(path);
   }
 }

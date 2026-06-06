@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
 import 'services/presence_service.dart';
 import 'pages/splash_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -11,6 +12,12 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  await Supabase.initialize(
+    url: 'https://gdlfkajdyrijasrbghvs.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkbGZrYWpkeXJpamFzcmJnaHZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDA0OTksImV4cCI6MjA5NjMxNjQ5OX0.BmOBwPB3E64XBp7WIWoUcAtvL76BZ4h6ygB3VLcmWbE',
+  );
+
   runApp(const ChatKuApp());
 }
 

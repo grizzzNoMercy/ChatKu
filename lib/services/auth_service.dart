@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -17,7 +18,8 @@ class AuthService extends ChangeNotifier {
     required String username,
     required String email,
     required String password,
-    File? photoFile,
+    Uint8List? photoBytes,
+    String photoExtension = '.jpg',
   }) async {
     try {
       print('🟡 Step 1: Mencoba buat akun Firebase Auth...');
@@ -28,11 +30,12 @@ class AuthService extends ChangeNotifier {
       print('✅ Step 1 berhasil: UID = ${credential.user!.uid}');
 
       String photoUrl = '';
-      if (photoFile != null) {
+      if (photoBytes != null) {
         print('🟡 Step 2: Upload foto...');
         photoUrl = await StorageService.uploadProfilePhoto(
           uid: credential.user!.uid,
-          file: photoFile,
+          bytes: photoBytes,
+          extension: photoExtension,
         );
         print('✅ Step 2 berhasil: photoUrl = $photoUrl');
       } else {
@@ -116,14 +119,16 @@ class AuthService extends ChangeNotifier {
   // Update profile
   Future<String?> updateProfile({
     required String username,
-    File? photoFile,
+    Uint8List? photoBytes,
+    String photoExtension = '.jpg',
   }) async {
     try {
       String? photoUrl;
-      if (photoFile != null) {
+      if (photoBytes != null) {
         photoUrl = await StorageService.uploadProfilePhoto(
           uid: currentUid!,
-          file: photoFile,
+          bytes: photoBytes,
+          extension: photoExtension,
         );
       }
 

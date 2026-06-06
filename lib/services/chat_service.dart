@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/message_model.dart';
 import '../models/user_model.dart';
@@ -48,12 +49,14 @@ class ChatService {
     required String roomId,
     required String senderId,
     required String receiverId,
-    required File file,
+    required Uint8List bytes,
+    required String fileName,
   }) async {
     final url = await StorageService.uploadChatFile(
       roomId: roomId,
-      file: file,
+      bytes: bytes,
       type: 'images',
+      fileName: fileName,
     );
     await _ensureAndSend(
       roomId: roomId,
@@ -70,12 +73,14 @@ class ChatService {
     required String roomId,
     required String senderId,
     required String receiverId,
-    required File file,
+    required Uint8List bytes,
+    required String fileName,
   }) async {
     final url = await StorageService.uploadChatFile(
       roomId: roomId,
-      file: file,
+      bytes: bytes,
       type: 'videos',
+      fileName: fileName,
     );
     await _ensureAndSend(
       roomId: roomId,
@@ -92,12 +97,12 @@ class ChatService {
     required String roomId,
     required String senderId,
     required String receiverId,
-    required File file,
+    required Uint8List bytes,
     required String fileName,
   }) async {
     final url = await StorageService.uploadChatFile(
       roomId: roomId,
-      file: file,
+      bytes: bytes,
       type: 'files',
       fileName: fileName,
     );

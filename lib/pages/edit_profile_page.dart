@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -18,7 +19,7 @@ class EditProfilePage extends StatefulWidget {
 class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController _usernameController;
   final _formKey = GlobalKey<FormState>();
-  File? _newPhoto;
+  Uint8List? _newPhotoBytes;
   bool _saving = false;
 
   @override
@@ -36,7 +37,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       imageQuality: 80,
     );
     if (picked != null) {
-      setState(() => _newPhoto = File(picked.path));
+      final bytes = await picked.readAsBytes();
+      setState(() => _newPhotoBytes = bytes);
     }
   }
 
@@ -45,7 +47,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     setState(() => _saving = true);
     final error = await context.read<AuthService>().updateProfile(
       username: _usernameController.text.trim(),
-      photoFile: _newPhoto,
+      photoBytes: _newPhotoBytes,
     );
     if (!mounted) return;
     setState(() => _saving = false);
@@ -111,12 +113,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     CircleAvatar(
                       radius: 56,
                       backgroundColor: AvatarHelper.backgroundColor(widget.userData.username),
-                      backgroundImage: _newPhoto != null
-                          ? FileImage(_newPhoto!)
+                      backgroundImage: _newPhotoBytes != null
+                          ? MemoryImage(_newPhotoBytes!)
                           : (widget.userData.photoUrl.isNotEmpty
                               ? NetworkImage(widget.userData.photoUrl) as ImageProvider
                               : null),
-                      child: (_newPhoto == null && widget.userData.photoUrl.isEmpty)
+                      child: (_newPhotoBytes == null && widget.userData.photoUrl.isEmpty)
                           ? Text(
                               widget.userData.username.isNotEmpty
                                   ? widget.userData.username[0].toUpperCase()

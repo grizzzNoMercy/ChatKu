@@ -1,11 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/presence_service.dart';
-import '../utils/avatar_helper.dart';
 import 'login_page.dart';
 import 'edit_profile_page.dart';
 
