@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:record/record.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import '../models/user_model.dart';
 import '../models/message_model.dart';
 import '../services/auth_service.dart';
@@ -35,6 +38,9 @@ class _ChatPageState extends State<ChatPage> {
   late final String _roomId;
   bool _sending = false;
   bool _showAttachMenu = false;
+  bool _showEmojiPicker = false;
+  bool _isRecording = false;
+  final AudioRecorder _recorder = AudioRecorder();
   int _previousMessageCount = -1; // -1 means first load
 
   @override
@@ -67,6 +73,7 @@ class _ChatPageState extends State<ChatPage> {
     );
     _messageController.dispose();
     _scrollController.dispose();
+    _recorder.dispose();
     super.dispose();
   }
 
@@ -175,6 +182,72 @@ class _ChatPageState extends State<ChatPage> {
     );
     setState(() => _sending = false);
     _scrollToBottom();
+  }
+
+  Future<void> _startRecording() async {
+    try {
+      if (await _recorder.hasPermission()) {
+        await _recorder.start(
+          const RecordConfig(
+            encoder: AudioEncoder.opus,
+            numChannels: 1,
+            sampleRate: 16000,
+          ),
+          path: '',  // empty path = record to stream/memory
+        );
+        setState(() => _isRecording = true);
+      }
+    } catch (e) {
+      debugPrint('Recording error: $e');
+    }
+  }
+
+  Future<void> _stopAndSendRecording() async {
+    if (!_isRecording) return;
+    try {
+      final path = await _recorder.stop();
+      setState(() => _isRecording = false);
+      if (path == null || !mounted) return;
+
+      // Read the recorded file as bytes (supports both Web blob URLs and Native paths)
+      final bytes = await XFile(path).readAsBytes();
+      if (bytes.isEmpty) return;
+
+      setState(() => _sending = true);
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      await ChatService.sendVoice(
+        roomId: _roomId,
+        senderId: widget.currentUid,
+        receiverId: widget.targetUser.uid,
+        bytes: bytes,
+        fileName: 'voice_$timestamp.opus',
+      );
+      setState(() => _sending = false);
+      _scrollToBottom();
+    } catch (e) {
+      setState(() {
+        _isRecording = false;
+        _sending = false;
+      });
+      debugPrint('Stop recording error: $e');
+    }
+  }
+
+  void _cancelRecording() async {
+    if (!_isRecording) return;
+    await _recorder.stop();
+    setState(() => _isRecording = false);
+  }
+
+  void _onEmojiSelected(Category? category, Emoji emoji) {
+    final text = _messageController.text;
+    final selection = _messageController.selection;
+    final start = selection.baseOffset < 0 ? text.length : selection.baseOffset;
+    final newText = text.substring(0, start) + emoji.emoji + text.substring(start);
+    _messageController.text = newText;
+    _messageController.selection = TextSelection.collapsed(
+      offset: start + emoji.emoji.length,
+    );
   }
 
   void _onTypingChanged(String value) {
@@ -444,15 +517,72 @@ class _ChatPageState extends State<ChatPage> {
               onFile: _sendFile,
             ),
 
+          // Recording indicator
+          if (_isRecording)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              color: const Color(0xFFFFF3F3),
+              child: Row(
+                children: [
+                  const Icon(Icons.mic, color: Colors.red, size: 20),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Merekam... Lepas untuk kirim',
+                      style: TextStyle(color: Colors.red, fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: _cancelRecording,
+                    child: const Icon(Icons.close, color: Colors.red, size: 20),
+                  ),
+                ],
+              ),
+            ),
+
           // Input bar
           _InputBar(
             controller: _messageController,
             sending: _sending,
+            isRecording: _isRecording,
             onChanged: _onTypingChanged,
             onSend: _sendMessage,
             onAttach: () =>
                 setState(() => _showAttachMenu = !_showAttachMenu),
+            onMicDown: _startRecording,
+            onMicUp: _stopAndSendRecording,
+            onEmojiTap: () {
+              setState(() => _showEmojiPicker = !_showEmojiPicker);
+              if (_showEmojiPicker) {
+                FocusScope.of(context).unfocus();
+              }
+            },
+            showEmojiPicker: _showEmojiPicker,
           ),
+
+          // Emoji picker
+          if (_showEmojiPicker)
+            SizedBox(
+              height: 260,
+              child: EmojiPicker(
+                onEmojiSelected: _onEmojiSelected,
+                config: const Config(
+                  height: 260,
+                  checkPlatformCompatibility: true,
+                  emojiViewConfig: EmojiViewConfig(
+                    emojiSizeMax: 28,
+                    columns: 8,
+                  ),
+                  categoryViewConfig: CategoryViewConfig(
+                    initCategory: Category.SMILEYS,
+                  ),
+                  bottomActionBarConfig: BottomActionBarConfig(enabled: false),
+                  searchViewConfig: SearchViewConfig(
+                    hintText: 'Cari emoji...',
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -645,16 +775,26 @@ class _AttachItem extends StatelessWidget {
 class _InputBar extends StatelessWidget {
   final TextEditingController controller;
   final bool sending;
+  final bool isRecording;
   final ValueChanged<String> onChanged;
   final VoidCallback onSend;
   final VoidCallback onAttach;
+  final VoidCallback onMicDown;
+  final VoidCallback onMicUp;
+  final VoidCallback onEmojiTap;
+  final bool showEmojiPicker;
 
   const _InputBar({
     required this.controller,
     required this.sending,
+    required this.isRecording,
     required this.onChanged,
     required this.onSend,
     required this.onAttach,
+    required this.onMicDown,
+    required this.onMicUp,
+    required this.onEmojiTap,
+    required this.showEmojiPicker,
   });
 
   @override
@@ -671,13 +811,21 @@ class _InputBar extends StatelessWidget {
         child: Row(
           children: [
             IconButton(
-              icon: const Icon(Icons.emoji_emotions_outlined, color: Colors.grey),
-              onPressed: () {},
+              icon: Icon(
+                showEmojiPicker
+                    ? Icons.keyboard_rounded
+                    : Icons.emoji_emotions_outlined,
+                color: Colors.grey,
+              ),
+              onPressed: onEmojiTap,
             ),
             Expanded(
               child: TextField(
                 controller: controller,
                 onChanged: onChanged,
+                onTap: () {
+                  // If emoji picker is visible and keyboard opens, let parent handle
+                },
                 maxLines: 4,
                 minLines: 1,
                 textCapitalization: TextCapitalization.sentences,
@@ -716,27 +864,52 @@ class _InputBar extends StatelessWidget {
               valueListenable: controller,
               builder: (context, value, _) {
                 final hasText = value.text.trim().isNotEmpty;
-                return GestureDetector(
-                  onTap: hasText ? (sending ? null : onSend) : null,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 40,
-                    height: 40,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF0EA5E9),
-                      shape: BoxShape.circle,
+                if (hasText) {
+                  // Send button
+                  return GestureDetector(
+                    onTap: sending ? null : onSend,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF0EA5E9),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        sending
+                            ? Icons.hourglass_empty_rounded
+                            : Icons.send_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
                     ),
-                    child: Icon(
-                      sending
-                          ? Icons.hourglass_empty_rounded
-                          : (hasText
-                              ? Icons.send_rounded
-                              : Icons.mic_none_rounded),
-                      color: Colors.white,
-                      size: 18,
+                  );
+                } else {
+                  // Mic button (press & hold)
+                  return GestureDetector(
+                    onLongPressStart: (_) => onMicDown(),
+                    onLongPressEnd: (_) => onMicUp(),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: isRecording
+                            ? Colors.red
+                            : const Color(0xFF0EA5E9),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isRecording
+                            ? Icons.mic_rounded
+                            : Icons.mic_none_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
                     ),
-                  ),
-                );
+                  );
+                }
               },
             ),
           ],

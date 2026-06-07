@@ -117,6 +117,30 @@ class ChatService {
     );
   }
 
+  // Send voice note
+  static Future<void> sendVoice({
+    required String roomId,
+    required String senderId,
+    required String receiverId,
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    final url = await StorageService.uploadChatFile(
+      roomId: roomId,
+      bytes: bytes,
+      type: 'voices',
+      fileName: fileName,
+    );
+    await _ensureAndSend(
+      roomId: roomId,
+      senderId: senderId,
+      receiverId: receiverId,
+      message: '🎤 Voice note',
+      type: MessageType.voice,
+      fileUrl: url,
+    );
+  }
+
   static Future<void> _ensureAndSend({
     required String roomId,
     required String senderId,

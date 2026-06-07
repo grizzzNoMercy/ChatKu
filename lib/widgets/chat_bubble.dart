@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -63,6 +64,8 @@ class ChatBubble extends StatelessWidget {
           fileName: message.fileName,
           isMe: isMe,
         );
+      case MessageType.voice:
+        return _VoiceBubble(url: message.fileUrl, isMe: isMe);
       default:
         return _TextBubble(text: message.message, isMe: isMe);
     }
@@ -307,6 +310,153 @@ class _FileBubble extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _VoiceBubble extends StatefulWidget {
+  final String url;
+  final bool isMe;
+  const _VoiceBubble({required this.url, required this.isMe});
+
+  @override
+  State<_VoiceBubble> createState() => _VoiceBubbleState();
+}
+
+class _VoiceBubbleState extends State<_VoiceBubble> {
+  final AudioPlayer _player = AudioPlayer();
+  bool _isPlaying = false;
+  Duration _duration = Duration.zero;
+  Duration _position = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _player.onDurationChanged.listen((d) {
+      if (mounted) setState(() => _duration = d);
+    });
+    _player.onPositionChanged.listen((p) {
+      if (mounted) setState(() => _position = p);
+    });
+    _player.onPlayerComplete.listen((_) {
+      if (mounted) {
+        setState(() {
+          _isPlaying = false;
+          _position = Duration.zero;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  Future<void> _togglePlay() async {
+    if (_isPlaying) {
+      await _player.pause();
+      setState(() => _isPlaying = false);
+    } else {
+      await _player.play(UrlSource(widget.url));
+      setState(() => _isPlaying = true);
+    }
+  }
+
+  String _formatDuration(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = _duration.inMilliseconds > 0
+        ? _position.inMilliseconds / _duration.inMilliseconds
+        : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: widget.isMe ? const Color(0xFF0EA5E9) : Colors.grey[100],
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(18),
+          topRight: const Radius.circular(18),
+          bottomLeft: Radius.circular(widget.isMe ? 18 : 4),
+          bottomRight: Radius.circular(widget.isMe ? 4 : 18),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GestureDetector(
+            onTap: _togglePlay,
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: widget.isMe
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : const Color(0xFF0EA5E9).withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                color: widget.isMe ? Colors.white : const Color(0xFF0EA5E9),
+                size: 22,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 140,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: progress.clamp(0.0, 1.0),
+                      backgroundColor: widget.isMe
+                          ? Colors.white.withValues(alpha: 0.3)
+                          : Colors.grey[300],
+                      valueColor: AlwaysStoppedAnimation(
+                        widget.isMe ? Colors.white : const Color(0xFF0EA5E9),
+                      ),
+                      minHeight: 4,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _isPlaying || _position > Duration.zero
+                      ? _formatDuration(_position)
+                      : _duration > Duration.zero
+                          ? _formatDuration(_duration)
+                          : '00:00',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: widget.isMe
+                        ? Colors.white.withValues(alpha: 0.8)
+                        : Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          Icon(
+            Icons.mic_rounded,
+            size: 16,
+            color: widget.isMe
+                ? Colors.white.withValues(alpha: 0.6)
+                : Colors.grey,
+          ),
+        ],
       ),
     );
   }

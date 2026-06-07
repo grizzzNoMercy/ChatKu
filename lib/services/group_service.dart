@@ -151,6 +151,28 @@ class GroupService {
     );
   }
 
+  // Send group voice note
+  static Future<void> sendVoice({
+    required String groupId,
+    required String senderId,
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    final url = await StorageService.uploadChatFile(
+      roomId: groupId,
+      bytes: bytes,
+      type: 'group_voices',
+      fileName: fileName,
+    );
+    await _ensureAndSend(
+      groupId: groupId,
+      senderId: senderId,
+      message: '🎤 Voice note',
+      type: MessageType.voice,
+      fileUrl: url,
+    );
+  }
+
   static Future<void> _ensureAndSend({
     required String groupId,
     required String senderId,
