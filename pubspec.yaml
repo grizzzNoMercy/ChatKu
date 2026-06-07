@@ -30,6 +30,7 @@ dependencies:
   supabase_flutter: ^2.14.1
   record: ^6.2.1
   emoji_picker_flutter: ^4.4.0
+  shared_preferences: ^2.2.3
 
 dev_dependencies:
   flutter_test:

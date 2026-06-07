@@ -5,6 +5,11 @@ import '../services/auth_service.dart';
 import '../services/presence_service.dart';
 import 'login_page.dart';
 import 'edit_profile_page.dart';
+import 'settings/notifications_page.dart';
+import 'settings/privacy_page.dart';
+import 'settings/security_page.dart';
+import 'settings/appearance_page.dart';
+import 'settings/language_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -72,15 +77,6 @@ class _ProfilePageState extends State<ProfilePage> {
         (_) => false,
       );
     }
-  }
-
-  void _showComingSoon() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Fitur ini akan segera hadir!'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
 
@@ -167,35 +163,50 @@ class _ProfilePageState extends State<ProfilePage> {
                     icon: Icons.notifications_none_rounded,
                     title: 'Notifications',
                     subtitle: 'Manage notification settings',
-                    onTap: _showComingSoon,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const NotificationsPage()),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   _buildSettingItem(
                     icon: Icons.lock_outline_rounded,
                     title: 'Privacy',
                     subtitle: 'Control your privacy settings',
-                    onTap: _showComingSoon,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const PrivacyPage()),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   _buildSettingItem(
                     icon: Icons.shield_outlined,
                     title: 'Security',
                     subtitle: 'Manage security options',
-                    onTap: _showComingSoon,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SecurityPage()),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   _buildSettingItem(
                     icon: Icons.palette_outlined,
                     title: 'Appearance',
                     subtitle: 'Customize app theme',
-                    onTap: _showComingSoon,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AppearancePage()),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   _buildSettingItem(
                     icon: Icons.language_rounded,
                     title: 'Language',
                     subtitle: 'English',
-                    onTap: _showComingSoon,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LanguagePage()),
+                    ),
                   ),
                   const SizedBox(height: 80),
                   OutlinedButton.icon(

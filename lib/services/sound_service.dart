@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Centralized service for playing in-app sound effects.
 ///
@@ -85,6 +86,10 @@ class SoundService {
   /// Play a short notification sound for new messages.
   /// Uses custom MP3: assets/audio/notifikasi_chat.mp3
   Future<void> playNotification() async {
+    final prefs = await SharedPreferences.getInstance();
+    final inAppSounds = prefs.getBool('in_app_sounds') ?? true;
+    if (!inAppSounds) return;
+
     _notificationPlayer?.dispose();
     _notificationPlayer = AudioPlayer();
     _notificationPlayer!.setReleaseMode(ReleaseMode.release);

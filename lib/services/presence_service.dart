@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PresenceService extends ChangeNotifier with WidgetsBindingObserver {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -15,6 +16,7 @@ class PresenceService extends ChangeNotifier with WidgetsBindingObserver {
     _setOnline(true);
   }
 
+  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _setOnline(false);
@@ -43,9 +45,16 @@ class PresenceService extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> _setOnline(bool online) async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return;
+    
     try {
-      final Map<String, dynamic> data = {'online': online};
-      if (!online) {
+      final prefs = await SharedPreferences.getInstance();
+      final showOnlineStatus = prefs.getBool('show_online_status') ?? true;
+      
+      // Jika pengguna menyembunyikan status online, selalu kirim false
+      final finalOnlineStatus = showOnlineStatus ? online : false;
+
+      final Map<String, dynamic> data = {'online': finalOnlineStatus};
+      if (!finalOnlineStatus) {
         data['lastSeen'] = Timestamp.now();
       }
       await _firestore.collection('users').doc(uid).update(data);

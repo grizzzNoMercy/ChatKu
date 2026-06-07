@@ -145,6 +145,20 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  // Change password
+  Future<String?> changePassword(String newPassword) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return 'Not authenticated';
+      await user.updatePassword(newPassword);
+      return null;
+    } on FirebaseAuthException catch (e) {
+      return _authError(e.code);
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
   String _authError(String code) {
     switch (code) {
       case 'email-already-in-use':

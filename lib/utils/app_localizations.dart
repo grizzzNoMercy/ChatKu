@@ -1,0 +1,82 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/settings_provider.dart';
+
+class AppLocalizations {
+  static const Map<String, Map<String, String>> _translations = {
+    'English': {
+      'chat': 'Chat',
+      'groups': 'Groups',
+      'search': 'Search...',
+      'message_hint': 'Message...',
+      'recording': 'Recording... Release to send',
+      'online': 'Online',
+      'offline': 'Offline',
+      'typing': 'typing...',
+      'profile': 'Profile',
+      'edit_profile': 'Edit Profile',
+      'logout': 'Logout',
+      'coming_soon': 'Coming Soon',
+      'send': 'Send',
+      'cancel': 'Cancel',
+      'save': 'Save',
+    },
+    'Bahasa Indonesia': {
+      'chat': 'Obrolan',
+      'groups': 'Grup',
+      'search': 'Cari...',
+      'message_hint': 'Ketik pesan...',
+      'recording': 'Merekam... Lepas untuk kirim',
+      'online': 'Online',
+      'offline': 'Offline',
+      'typing': 'mengetik...',
+      'profile': 'Profil',
+      'edit_profile': 'Edit Profil',
+      'logout': 'Keluar',
+      'coming_soon': 'Segera Hadir',
+      'send': 'Kirim',
+      'cancel': 'Batal',
+      'save': 'Simpan',
+    },
+    'Español': {
+      'chat': 'Chat',
+      'groups': 'Grupos',
+      'search': 'Buscar...',
+      'message_hint': 'Mensaje...',
+      'recording': 'Grabando... Suelta para enviar',
+      'online': 'En línea',
+      'offline': 'Desconectado',
+      'typing': 'escribiendo...',
+      'profile': 'Perfil',
+      'edit_profile': 'Editar perfil',
+      'logout': 'Cerrar sesión',
+      'coming_soon': 'Próximamente',
+      'send': 'Enviar',
+      'cancel': 'Cancelar',
+      'save': 'Guardar',
+    },
+    '日本語': {
+      'chat': 'チャット',
+      'groups': 'グループ',
+      'search': '検索...',
+      'message_hint': 'メッセージ...',
+      'recording': '録音中... 離して送信',
+      'online': 'オンライン',
+      'offline': 'オフライン',
+      'typing': '入力中...',
+      'profile': 'プロフィール',
+      'edit_profile': 'プロフィール編集',
+      'logout': 'ログアウト',
+      'coming_soon': '近日公開',
+      'send': '送信',
+      'cancel': 'キャンセル',
+      'save': '保存',
+    },
+  };
+
+  static String of(BuildContext context, String key) {
+    final provider = Provider.of<SettingsProvider>(context);
+    final currentLang = provider.localeString;
+    return _translations[currentLang]?[key] ?? _translations['English']?[key] ?? key;
+  }
+}
