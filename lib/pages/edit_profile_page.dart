@@ -79,20 +79,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        surfaceTintColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111111)),
+          icon: Icon(Icons.arrow_back_rounded, color: theme.colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Edit Profile',
           style: TextStyle(
-            color: Color(0xFF111111),
+            color: theme.colorScheme.onSurface,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
@@ -137,9 +140,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0EA5E9),
+                          color: theme.colorScheme.primary,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
+                          border: Border.all(color: theme.scaffoldBackgroundColor, width: 3),
                         ),
                         child: const Icon(
                           Icons.camera_alt_rounded,
@@ -155,21 +158,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
               // Name Field
               TextFormField(
                 controller: _usernameController,
+                style: TextStyle(color: theme.colorScheme.onSurface),
                 decoration: InputDecoration(
                   labelText: 'Name',
-                  labelStyle: const TextStyle(color: Color(0xFF999999)),
-                  prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF999999)),
+                  labelStyle: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                  prefixIcon: Icon(Icons.person_outline_rounded, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+                    borderSide: BorderSide(color: isDark ? const Color(0xFF333333) : const Color(0xFFEEEEEE)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+                    borderSide: BorderSide(color: isDark ? const Color(0xFF333333) : const Color(0xFFEEEEEE)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: Color(0xFF0EA5E9)),
+                    borderSide: BorderSide(color: theme.colorScheme.primary),
                   ),
                 ),
                 validator: (v) {
@@ -183,12 +187,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
               TextFormField(
                 initialValue: widget.userData.email,
                 readOnly: true,
+                style: TextStyle(color: theme.colorScheme.onSurface),
                 decoration: InputDecoration(
                   labelText: 'Email',
-                  labelStyle: const TextStyle(color: Color(0xFF999999)),
-                  prefixIcon: const Icon(Icons.mail_outline_rounded, color: Color(0xFF999999)),
+                  labelStyle: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                  prefixIcon: Icon(Icons.mail_outline_rounded, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
                   filled: true,
-                  fillColor: const Color(0xFFF9F9F9),
+                  fillColor: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF9F9F9),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
@@ -200,7 +205,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ElevatedButton(
                 onPressed: _saving ? null : _save,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0EA5E9),
+                  backgroundColor: theme.colorScheme.primary,
                   foregroundColor: Colors.white,
                   minimumSize: const Size(double.infinity, 54),
                   shape: RoundedRectangleBorder(

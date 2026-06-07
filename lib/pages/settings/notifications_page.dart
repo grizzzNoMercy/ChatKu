@@ -33,28 +33,31 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Notifications'),
+        backgroundColor: theme.appBarTheme.backgroundColor,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           SwitchListTile(
-            title: const Text(
+            title: Text(
               'In-App Sounds',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
+                color: theme.colorScheme.onSurface,
               ),
             ),
-            subtitle: const Text(
+            subtitle: Text(
               "Bunyi 'ting' saat mengirim atau menerima pesan",
-              style: TextStyle(color: Color(0xFF999999), fontSize: 13),
+              style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 13),
             ),
             value: _inAppSounds,
-            activeColor: const Color(0xFF0EA5E9),
+            activeColor: theme.colorScheme.primary,
             onChanged: _toggleSounds,
           ),
         ],
