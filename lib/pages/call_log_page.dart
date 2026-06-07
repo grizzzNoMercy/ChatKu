@@ -19,8 +19,11 @@ class _CallLogPageState extends State<CallLogPage> {
   @override
   Widget build(BuildContext context) {
     final currentUid = context.read<AuthService>().currentUid ?? '';
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -30,17 +33,17 @@ class _CallLogPageState extends State<CallLogPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Calls',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF111111),
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                   PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert_rounded,
-                        color: Color(0xFF111111)),
+                    icon: Icon(Icons.more_vert_rounded,
+                        color: theme.colorScheme.onSurface),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
                     onSelected: (v) async {
@@ -79,115 +82,125 @@ class _CallLogPageState extends State<CallLogPage> {
                 ],
               ),
             ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: TextField(
-              onChanged: (val) {
-                setState(() {
-                  _searchQuery = val.toLowerCase();
-                });
-              },
-              decoration: InputDecoration(
-                hintText: 'Search calls...',
-                hintStyle: const TextStyle(color: Color(0xFF999999), fontSize: 14),
-                prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF999999)),
-                filled: true,
-                fillColor: Colors.grey[100],
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: TextField(
+                onChanged: (val) {
+                  setState(() {
+                    _searchQuery = val.toLowerCase();
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search calls...',
+                  hintStyle: TextStyle(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      fontSize: 14),
+                  prefixIcon: Icon(Icons.search_rounded,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+                  filled: true,
+                  fillColor: isDark
+                      ? const Color(0xFF2C2C2C)
+                      : Colors.grey[100],
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
             ),
-          ),
-          Expanded(
-            child: StreamBuilder<List<CallLogModel>>(
-              stream: CallLogService.logsStream(currentUid),
-              builder: (context, snap) {
-                if (snap.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFF0EA5E9),
-                      strokeWidth: 2,
-                    ),
-                  );
-                }
-
-          if (snap.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.error_outline_rounded,
-                        size: 48, color: Color(0xFFFF3B30)),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Gagal memuat log: ${snap.error}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Color(0xFF999999),
-                        fontSize: 13,
+            Expanded(
+              child: StreamBuilder<List<CallLogModel>>(
+                stream: CallLogService.logsStream(currentUid),
+                builder: (context, snap) {
+                  if (snap.connectionState == ConnectionState.waiting) {
+                    return Center(
+                      child: CircularProgressIndicator(
+                        color: theme.colorScheme.primary,
+                        strokeWidth: 2,
                       ),
-                    ),
-                  ],
-                ),
+                    );
+                  }
+
+                  if (snap.hasError) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.error_outline_rounded,
+                                size: 48, color: Color(0xFFFF3B30)),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Gagal memuat log: ${snap.error}',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.5),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  final allLogs = snap.data ?? [];
+                  final logs = allLogs.where((log) {
+                    if (_searchQuery.isEmpty) return true;
+                    final name = log.otherName(currentUid).toLowerCase();
+                    return name.contains(_searchQuery);
+                  }).toList();
+
+                  if (logs.isEmpty) {
+                    if (_searchQuery.isNotEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 40),
+                          child: Text(
+                            'Tidak ada hasil untuk "$_searchQuery"',
+                            style: TextStyle(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.4),
+                                fontSize: 14),
+                          ),
+                        ),
+                      );
+                    }
+                    return const _EmptyState();
+                  }
+
+                  // Group logs by date
+                  final grouped = _groupByDate(logs);
+                  final keys = grouped.keys.toList();
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    itemCount: keys.length,
+                    itemBuilder: (context, i) {
+                      final dateLabel = keys[i];
+                      final dayLogs = grouped[dateLabel]!;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _DateHeader(label: dateLabel),
+                          ...dayLogs.map((log) => _CallLogTile(
+                                log: log,
+                                currentUid: currentUid,
+                                onDelete: () async {
+                                  await CallLogService.deleteLog(log.id);
+                                },
+                              )),
+                        ],
+                      );
+                    },
+                  );
+                },
               ),
-            );
-          }
-
-          final allLogs = snap.data ?? [];
-          final logs = allLogs.where((log) {
-            if (_searchQuery.isEmpty) return true;
-            final name = log.otherName(currentUid).toLowerCase();
-            return name.contains(_searchQuery);
-          }).toList();
-
-          if (logs.isEmpty) {
-            if (_searchQuery.isNotEmpty) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 40),
-                  child: Text(
-                    'Tidak ada hasil untuk "$_searchQuery"',
-                    style: const TextStyle(color: Color(0xFF999999), fontSize: 14),
-                  ),
-                ),
-              );
-            }
-            return _EmptyState();
-          }
-
-          // Group logs by date
-          final grouped = _groupByDate(logs);
-          final keys = grouped.keys.toList();
-
-          return ListView.builder(
-            padding: const EdgeInsets.only(bottom: 24),
-            itemCount: keys.length,
-            itemBuilder: (context, i) {
-              final dateLabel = keys[i];
-              final dayLogs = grouped[dateLabel]!;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _DateHeader(label: dateLabel),
-                  ...dayLogs.map((log) => _CallLogTile(
-                        log: log,
-                        currentUid: currentUid,
-                        onDelete: () async {
-                          await CallLogService.deleteLog(log.id);
-                        },
-                      )),
-                ],
-              );
-            },
-          );
-        },
-      ),
-          ),
+            ),
           ],
         ),
       ),
@@ -242,12 +255,11 @@ class _CallLogPageState extends State<CallLogPage> {
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 17,
-                color: Color(0xFF111111),
               ),
             ),
             content: const Text(
               'Semua riwayat panggilan akan dihapus secara permanen.',
-              style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
+              style: TextStyle(fontSize: 14),
             ),
             actions: [
               TextButton(
@@ -272,8 +284,13 @@ class _CallLogPageState extends State<CallLogPage> {
 
 // ── Empty State ───────────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -281,29 +298,32 @@ class _EmptyState extends StatelessWidget {
           Container(
             width: 96,
             height: 96,
-            decoration: const BoxDecoration(
-              color: Color(0xFFF0F0F0),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF0F0F0),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.phone_missed_rounded,
               size: 44,
-              color: Color(0xFFCCCCCC),
+              color: isDark ? const Color(0xFF555555) : const Color(0xFFCCCCCC),
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'Belum ada log panggilan',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF999999),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Riwayat panggilan akan muncul di sini',
-            style: TextStyle(fontSize: 13, color: Color(0xFFBBBBBB)),
+            style: TextStyle(
+              fontSize: 13,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
+            ),
           ),
         ],
       ),
@@ -318,14 +338,16 @@ class _DateHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: Color(0xFF999999),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
           letterSpacing: 0.5,
         ),
       ),
@@ -392,6 +414,8 @@ class _CallLogTile extends StatelessWidget {
     final name = log.otherName(currentUid);
     final photo = log.otherPhotoUrl(currentUid);
     final time = _formatTime(log.timestamp);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Dismissible(
       key: Key(log.id),
@@ -410,11 +434,11 @@ class _CallLogTile extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -447,8 +471,8 @@ class _CallLogTile extends StatelessWidget {
                 bottom: 0,
                 child: Container(
                   padding: const EdgeInsets.all(3),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF5F5F5),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF333333) : const Color(0xFFF5F5F5),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -456,7 +480,7 @@ class _CallLogTile extends StatelessWidget {
                         ? Icons.videocam_rounded
                         : Icons.phone_rounded,
                     size: 11,
-                    color: const Color(0xFF111111),
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -471,7 +495,7 @@ class _CallLogTile extends StatelessWidget {
               fontSize: 15,
               color: _myStatus == CallLogStatus.missed
                   ? const Color(0xFFFF3B30)
-                  : const Color(0xFF111111),
+                  : theme.colorScheme.onSurface,
             ),
           ),
           subtitle: Row(
@@ -483,15 +507,17 @@ class _CallLogTile extends StatelessWidget {
                 style: TextStyle(fontSize: 12, color: _directionColor),
               ),
               if (log.durationText.isNotEmpty) ...[
-                const Text(
+                Text(
                   ' · ',
-                  style:
-                      TextStyle(fontSize: 12, color: Color(0xFF999999)),
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
                 ),
                 Text(
                   log.durationText,
-                  style: const TextStyle(
-                      fontSize: 12, color: Color(0xFF999999)),
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
                 ),
               ],
             ],
@@ -502,9 +528,9 @@ class _CallLogTile extends StatelessWidget {
             children: [
               Text(
                 time,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: Color(0xFFBBBBBB),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
                 ),
               ),
               const SizedBox(height: 6),
@@ -513,7 +539,7 @@ class _CallLogTile extends StatelessWidget {
                     ? Icons.videocam_outlined
                     : Icons.phone_outlined,
                 size: 16,
-                color: const Color(0xFF0EA5E9),
+                color: theme.colorScheme.primary,
               ),
             ],
           ),
