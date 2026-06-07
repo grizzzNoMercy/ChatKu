@@ -10,6 +10,7 @@ import 'settings/privacy_page.dart';
 import 'settings/security_page.dart';
 import 'settings/appearance_page.dart';
 import 'settings/language_page.dart';
+import '../utils/app_localizations.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -82,12 +83,19 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context, 'profile')),
+        backgroundColor: theme.appBarTheme.backgroundColor,
+      ),
       body: SafeArea(
         child: _loading
-            ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFF0EA5E9)),
+            ? Center(
+                child: CircularProgressIndicator(color: theme.colorScheme.primary),
               )
             : SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
@@ -116,18 +124,18 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 16),
                   Text(
                     _userData?.username ?? '',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF111111),
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     _userData?.email ?? '',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: Color(0xFF999999),
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -145,23 +153,24 @@ class _ProfilePageState extends State<ProfilePage> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0EA5E9),
-                      foregroundColor: Colors.white,
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: theme.colorScheme.onPrimary,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 36, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(24),
                       ),
                     ),
-                    child: const Text(
-                      'Edit Profile',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                    child: Text(
+                      AppLocalizations.of(context, 'edit_profile'),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
                   const SizedBox(height: 32),
                   _buildSettingItem(
+                    context: context,
                     icon: Icons.notifications_none_rounded,
-                    title: 'Notifications',
+                    title: AppLocalizations.of(context, 'notifications'),
                     subtitle: 'Manage notification settings',
                     onTap: () => Navigator.push(
                       context,
@@ -170,8 +179,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 8),
                   _buildSettingItem(
+                    context: context,
                     icon: Icons.lock_outline_rounded,
-                    title: 'Privacy',
+                    title: AppLocalizations.of(context, 'privacy'),
                     subtitle: 'Control your privacy settings',
                     onTap: () => Navigator.push(
                       context,
@@ -180,8 +190,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 8),
                   _buildSettingItem(
+                    context: context,
                     icon: Icons.shield_outlined,
-                    title: 'Security',
+                    title: AppLocalizations.of(context, 'security'),
                     subtitle: 'Manage security options',
                     onTap: () => Navigator.push(
                       context,
@@ -190,8 +201,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 8),
                   _buildSettingItem(
+                    context: context,
                     icon: Icons.palette_outlined,
-                    title: 'Appearance',
+                    title: AppLocalizations.of(context, 'appearance'),
                     subtitle: 'Customize app theme',
                     onTap: () => Navigator.push(
                       context,
@@ -200,8 +212,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 8),
                   _buildSettingItem(
+                    context: context,
                     icon: Icons.language_rounded,
-                    title: 'Language',
+                    title: AppLocalizations.of(context, 'language'),
                     subtitle: 'English',
                     onTap: () => Navigator.push(
                       context,
@@ -216,9 +229,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       color: Color(0xFFFF3B30),
                       size: 20,
                     ),
-                    label: const Text(
-                      'Logout',
-                      style: TextStyle(
+                    label: Text(
+                      AppLocalizations.of(context, 'logout'),
+                      style: const TextStyle(
                         color: Color(0xFFFF3B30),
                         fontWeight: FontWeight.w600,
                       ),
@@ -240,39 +253,43 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildSettingItem({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return ListTile(
       contentPadding: EdgeInsets.zero,
       onTap: onTap,
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: isDark ? const Color(0xFF2C2C2C) : Colors.grey[100],
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: const Color(0xFF111111), size: 24),
+        child: Icon(icon, color: theme.colorScheme.onSurface, size: 24),
       ),
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.w600,
-          color: Color(0xFF111111),
+          color: theme.colorScheme.onSurface,
           fontSize: 15,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(
-          color: Color(0xFF999999),
+        style: TextStyle(
+          color: theme.colorScheme.onSurface.withOpacity(0.6),
           fontSize: 13,
         ),
       ),
       trailing:
-          const Icon(Icons.chevron_right_rounded, color: Color(0xFFCCCCCC)),
+          Icon(Icons.chevron_right_rounded, color: theme.colorScheme.onSurface.withOpacity(0.3)),
     );
   }
 }

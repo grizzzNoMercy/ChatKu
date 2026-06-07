@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import '../../providers/settings_provider.dart';
 
 class AppearancePage extends StatefulWidget {
   const AppearancePage({super.key});
@@ -14,27 +15,31 @@ class _AppearancePageState extends State<AppearancePage> {
   @override
   void initState() {
     super.initState();
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _selectedTheme = prefs.getString('app_theme') ?? 'Light Mode';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final settings = context.read<SettingsProvider>();
+        final themeStr = settings.themeMode == ThemeMode.light 
+          ? 'Light Mode' 
+          : settings.themeMode == ThemeMode.dark ? 'Dark Mode' : 'System Default';
+        setState(() {
+          _selectedTheme = themeStr;
+        });
+      }
     });
   }
 
   Future<void> _setTheme(String theme) async {
     setState(() => _selectedTheme = theme);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('app_theme', theme);
+    await context.read<SettingsProvider>().setTheme(theme);
   }
 
   @override
   Widget build(BuildContext context) {
-    // Demo background color based on selection
-    final bgColor = _selectedTheme == 'Dark Mode' ? const Color(0xFF1E1E1E) : Colors.white;
-    final textColor = _selectedTheme == 'Dark Mode' ? Colors.white : Colors.black;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final bgColor = theme.scaffoldBackgroundColor;
+    final textColor = theme.colorScheme.onSurface;
 
     return Scaffold(
       backgroundColor: bgColor,

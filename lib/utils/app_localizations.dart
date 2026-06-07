@@ -20,6 +20,11 @@ class AppLocalizations {
       'send': 'Send',
       'cancel': 'Cancel',
       'save': 'Save',
+      'notifications': 'Notifications',
+      'privacy': 'Privacy',
+      'security': 'Security',
+      'appearance': 'Appearance',
+      'language': 'Language',
     },
     'Bahasa Indonesia': {
       'chat': 'Obrolan',
@@ -37,6 +42,11 @@ class AppLocalizations {
       'send': 'Kirim',
       'cancel': 'Batal',
       'save': 'Simpan',
+      'notifications': 'Notifikasi',
+      'privacy': 'Privasi',
+      'security': 'Keamanan',
+      'appearance': 'Tampilan',
+      'language': 'Bahasa',
     },
     'Español': {
       'chat': 'Chat',
@@ -54,6 +64,11 @@ class AppLocalizations {
       'send': 'Enviar',
       'cancel': 'Cancelar',
       'save': 'Guardar',
+      'notifications': 'Notificaciones',
+      'privacy': 'Privacidad',
+      'security': 'Seguridad',
+      'appearance': 'Apariencia',
+      'language': 'Idioma',
     },
     '日本語': {
       'chat': 'チャット',
@@ -71,6 +86,11 @@ class AppLocalizations {
       'send': '送信',
       'cancel': 'キャンセル',
       'save': '保存',
+      'notifications': '通知',
+      'privacy': 'プライバシー',
+      'security': 'セキュリティ',
+      'appearance': '外観',
+      'language': '言語',
     },
   };
 

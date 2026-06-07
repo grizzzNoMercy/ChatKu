@@ -145,14 +145,33 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // Change password
-  Future<String?> changePassword(String newPassword) async {
+  // Change password (requires re-authentication first)
+  Future<String?> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
     try {
       final user = _auth.currentUser;
       if (user == null) return 'Not authenticated';
+      if (user.email == null) return 'No email associated with this account';
+
+      // Re-authenticate with old password first
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: oldPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+
+      // Now update password
       await user.updatePassword(newPassword);
       return null;
     } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        return 'Password lama salah.';
+      }
+      if (e.code == 'weak-password') {
+        return 'Password baru terlalu lemah (minimal 6 karakter).';
+      }
       return _authError(e.code);
     } catch (e) {
       return e.toString();

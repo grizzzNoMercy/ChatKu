@@ -21,6 +21,7 @@ import 'incoming_call_page.dart';
 import 'profile_page.dart';
 import '../services/sound_service.dart';
 import '../services/presence_service.dart';
+import '../utils/app_localizations.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -799,7 +800,7 @@ class _BottomNavBar extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).scaffoldBackgroundColor,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -930,16 +931,16 @@ class _BounceTabItemState extends State<_BounceTabItem>
                       child: Icon(
                         widget.icon,
                         color: widget.isActive
-                            ? const Color(0xFF0EA5E9)
-                            : const Color(0xFF999999),
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                         size: 26,
                       ),
                     )
                   : Icon(
                       widget.icon,
                       color: widget.isActive
-                          ? const Color(0xFF0EA5E9)
-                          : const Color(0xFF999999),
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                       size: 26,
                     ),
             ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import '../../providers/settings_provider.dart';
 
 class LanguagePage extends StatefulWidget {
   const LanguagePage({super.key});
@@ -21,20 +22,19 @@ class _LanguagePageState extends State<LanguagePage> {
   @override
   void initState() {
     super.initState();
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _selectedLanguage = prefs.getString('app_language') ?? 'English';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final settings = context.read<SettingsProvider>();
+        setState(() {
+          _selectedLanguage = settings.localeString;
+        });
+      }
     });
   }
 
   Future<void> _setLanguage(String lang) async {
     setState(() => _selectedLanguage = lang);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('app_language', lang);
+    await context.read<SettingsProvider>().setLanguage(lang);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -45,10 +45,14 @@ class _LanguagePageState extends State<LanguagePage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Language'),
+        backgroundColor: theme.appBarTheme.backgroundColor,
       ),
       body: ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -62,11 +66,11 @@ class _LanguagePageState extends State<LanguagePage> {
               lang,
               style: TextStyle(
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? const Color(0xFF0EA5E9) : Colors.black87,
+                color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
               ),
             ),
             trailing: isSelected
-                ? const Icon(Icons.check_circle_rounded, color: Color(0xFF0EA5E9))
+                ? Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary)
                 : null,
             onTap: () => _setLanguage(lang),
           );
