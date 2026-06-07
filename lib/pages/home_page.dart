@@ -715,18 +715,18 @@ class _GroupTile extends StatelessWidget {
       ),
       title: Text(
         group.name,
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: 16,
-          color: Color(0xFF111111),
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
       subtitle: Text(
         group.lastMessage.isEmpty ? 'Grup dibuat' : group.lastMessage,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          color: Color(0xFF999999),
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           fontSize: 14,
         ),
       ),

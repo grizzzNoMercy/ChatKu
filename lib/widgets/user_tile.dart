@@ -40,7 +40,7 @@ class UserTile extends StatelessWidget {
             child: Row(
               children: [
                 // Avatar with online dot
-                _buildAvatar(),
+                _buildAvatar(context),
                 const SizedBox(width: 14),
                 // Name + last message
                 Expanded(
@@ -49,10 +49,10 @@ class UserTile extends StatelessWidget {
                     children: [
                       Text(
                         user.username,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 15,
-                          color: Color(0xFF111111),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -116,7 +116,8 @@ class UserTile extends StatelessWidget {
     );
   }
 
-  Widget _buildAvatar() {
+  Widget _buildAvatar(BuildContext context) {
+    final theme = Theme.of(context);
     return Stack(
       children: [
         CircleAvatar(
@@ -147,7 +148,7 @@ class UserTile extends StatelessWidget {
               decoration: BoxDecoration(
                 color: const Color(0xFF34C759),
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
+                border: Border.all(color: theme.scaffoldBackgroundColor, width: 2),
               ),
             ),
           ),

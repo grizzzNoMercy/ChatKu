@@ -290,6 +290,9 @@ class _ChatPageState extends State<ChatPage> {
           stream: ChatService.userStream(widget.targetUser.uid),
           builder: (context, snapshot) {
             final user = snapshot.data ?? widget.targetUser;
+            final theme = Theme.of(context);
+            final isDark = theme.brightness == Brightness.dark;
+            
             return GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () {
@@ -335,7 +338,7 @@ class _ChatPageState extends State<ChatPage> {
                               color: const Color(0xFF34C759),
                               shape: BoxShape.circle,
                               border: Border.all(
-                                  color: Colors.white, width: 1.5),
+                                  color: theme.appBarTheme.backgroundColor ?? theme.scaffoldBackgroundColor, width: 1.5),
                             ),
                           ),
                         ),
@@ -348,10 +351,10 @@ class _ChatPageState extends State<ChatPage> {
                       children: [
                         Text(
                           user.username,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF111111),
+                            color: theme.colorScheme.onSurface,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
