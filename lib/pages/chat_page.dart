@@ -699,12 +699,18 @@ class _AttachMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
         border: Border(
-          top: BorderSide(color: Color(0xFFF0F0F0), width: 0.5),
+          top: BorderSide(
+            color: isDark ? const Color(0xFF333333) : const Color(0xFFF0F0F0),
+            width: 0.5,
+          ),
         ),
       ),
       child: Row(
@@ -744,6 +750,9 @@ class _AttachItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -752,18 +761,18 @@ class _AttachItem extends StatelessWidget {
           Container(
             width: 52,
             height: 52,
-            decoration: const BoxDecoration(
-              color: Color(0xFFF5F5F5),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF5F5F5),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: const Color(0xFF111111), size: 24),
+            child: Icon(icon, color: theme.colorScheme.onSurface, size: 24),
           ),
           const SizedBox(height: 6),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: Color(0xFF999999),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -799,13 +808,19 @@ class _InputBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
           border: Border(
-            top: BorderSide(color: Color(0xFFF0F0F0), width: 0.5),
+            top: BorderSide(
+              color: isDark ? const Color(0xFF333333) : const Color(0xFFF0F0F0),
+              width: 0.5,
+            ),
           ),
         ),
         child: Row(
@@ -815,7 +830,7 @@ class _InputBar extends StatelessWidget {
                 showEmojiPicker
                     ? Icons.keyboard_rounded
                     : Icons.emoji_emotions_outlined,
-                color: Colors.grey,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               onPressed: onEmojiTap,
             ),
@@ -829,11 +844,12 @@ class _InputBar extends StatelessWidget {
                 maxLines: 4,
                 minLines: 1,
                 textCapitalization: TextCapitalization.sentences,
-                style: const TextStyle(fontSize: 14),
+                style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: 'Message...',
-                  hintStyle: const TextStyle(
-                      color: Color(0xFF999999), fontSize: 14),
+                  hintStyle: TextStyle(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      fontSize: 14),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 10,
@@ -851,13 +867,13 @@ class _InputBar extends StatelessWidget {
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: Colors.grey[100],
+                  fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey[100],
                 ),
                 onSubmitted: (_) => onSend(),
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.add, color: Colors.grey),
+              icon: Icon(Icons.add, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
               onPressed: onAttach,
             ),
             ValueListenableBuilder<TextEditingValue>(
