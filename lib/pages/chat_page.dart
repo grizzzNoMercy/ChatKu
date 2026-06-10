@@ -6,6 +6,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:record/record.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:flutter/foundation.dart' hide Category;
+import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/user_model.dart';
 import '../models/message_model.dart';
 import '../services/auth_service.dart';
@@ -68,10 +71,10 @@ class _ChatPageState extends State<ChatPage> {
   void dispose() {
     context.read<PresenceService>().leaveRoom(_roomId);
     context.read<PresenceService>().setTyping(
-      roomId: _roomId,
-      uid: widget.currentUid,
-      isTyping: false,
-    );
+          roomId: _roomId,
+          uid: widget.currentUid,
+          isTyping: false,
+        );
     _messageController.dispose();
     _scrollController.dispose();
     _recorder.dispose();
@@ -110,10 +113,10 @@ class _ChatPageState extends State<ChatPage> {
     _messageController.clear();
     setState(() => _sending = true);
     await context.read<PresenceService>().setTyping(
-      roomId: _roomId,
-      uid: widget.currentUid,
-      isTyping: false,
-    );
+          roomId: _roomId,
+          uid: widget.currentUid,
+          isTyping: false,
+        );
     await ChatService.sendTextMessage(
       roomId: _roomId,
       senderId: widget.currentUid,
@@ -187,19 +190,44 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> _startRecording() async {
     try {
+      if (!kIsWeb && Platform.isAndroid) {
+        final status = await Permission.microphone.request();
+        if (status != PermissionStatus.granted) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Izin mikrofon diperlukan')),
+            );
+          }
+          return;
+        }
+      }
+
       if (await _recorder.hasPermission()) {
+        String path = '';
+        if (!kIsWeb && Platform.isAndroid) {
+          final dir = await getTemporaryDirectory();
+          path =
+              '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+        }
+
         await _recorder.start(
           const RecordConfig(
-            encoder: AudioEncoder.opus,
+            encoder: AudioEncoder
+                .aacLc, // Use aacLc for better compatibility on mobile
             numChannels: 1,
             sampleRate: 16000,
           ),
-          path: '',  // empty path = record to stream/memory
+          path: path,
         );
         setState(() => _isRecording = true);
       }
     } catch (e) {
       debugPrint('Recording error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memulai rekaman: $e')),
+        );
+      }
     }
   }
 
@@ -221,7 +249,7 @@ class _ChatPageState extends State<ChatPage> {
         senderId: widget.currentUid,
         receiverId: widget.targetUser.uid,
         bytes: bytes,
-        fileName: 'voice_$timestamp.opus',
+        fileName: 'voice_$timestamp.m4a',
       );
       setState(() => _sending = false);
       _scrollToBottom();
@@ -231,6 +259,11 @@ class _ChatPageState extends State<ChatPage> {
         _sending = false;
       });
       debugPrint('Stop recording error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengirim rekaman: $e')),
+        );
+      }
     }
   }
 
@@ -244,7 +277,8 @@ class _ChatPageState extends State<ChatPage> {
     final text = _messageController.text;
     final selection = _messageController.selection;
     final start = selection.baseOffset < 0 ? text.length : selection.baseOffset;
-    final newText = text.substring(0, start) + emoji.emoji + text.substring(start);
+    final newText =
+        text.substring(0, start) + emoji.emoji + text.substring(start);
     _messageController.text = newText;
     _messageController.selection = TextSelection.collapsed(
       offset: start + emoji.emoji.length,
@@ -253,10 +287,10 @@ class _ChatPageState extends State<ChatPage> {
 
   void _onTypingChanged(String value) {
     context.read<PresenceService>().setTyping(
-      roomId: _roomId,
-      uid: widget.currentUid,
-      isTyping: value.isNotEmpty,
-    );
+          roomId: _roomId,
+          uid: widget.currentUid,
+          isTyping: value.isNotEmpty,
+        );
   }
 
   Future<void> _startCall(bool isVideo) async {
@@ -306,7 +340,7 @@ class _ChatPageState extends State<ChatPage> {
             final user = snapshot.data ?? widget.targetUser;
             final theme = Theme.of(context);
             final isDark = theme.brightness == Brightness.dark;
-            
+
             return GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () {
@@ -352,7 +386,9 @@ class _ChatPageState extends State<ChatPage> {
                               color: const Color(0xFF34C759),
                               shape: BoxShape.circle,
                               border: Border.all(
-                                  color: theme.appBarTheme.backgroundColor ?? theme.scaffoldBackgroundColor, width: 1.5),
+                                  color: theme.appBarTheme.backgroundColor ??
+                                      theme.scaffoldBackgroundColor,
+                                  width: 1.5),
                             ),
                           ),
                         ),
@@ -469,7 +505,7 @@ class _ChatPageState extends State<ChatPage> {
                   );
                 }
                 final reversedMessages = messages.reversed.toList();
-                
+
                 return ListView.builder(
                   controller: _scrollController,
                   reverse: true,
@@ -486,8 +522,7 @@ class _ChatPageState extends State<ChatPage> {
                             reversedMessages[i + 1].timestamp.toDate().day;
                     return Column(
                       children: [
-                        if (showDate)
-                          _DateDivider(msg.timestamp.toDate()),
+                        if (showDate) _DateDivider(msg.timestamp.toDate()),
                         ChatBubble(message: msg, isMe: isMe),
                       ],
                     );
@@ -500,9 +535,9 @@ class _ChatPageState extends State<ChatPage> {
           // Typing indicator
           StreamBuilder<bool>(
             stream: context.read<PresenceService>().typingStream(
-              roomId: _roomId,
-              otherUid: widget.targetUser.uid,
-            ),
+                  roomId: _roomId,
+                  otherUid: widget.targetUser.uid,
+                ),
             builder: (context, snapshot) {
               final isTyping = snapshot.data ?? false;
               if (!isTyping) return const SizedBox.shrink();
@@ -546,7 +581,10 @@ class _ChatPageState extends State<ChatPage> {
                   const Expanded(
                     child: Text(
                       'Merekam... Lepas untuk kirim',
-                      style: TextStyle(color: Colors.red, fontSize: 13, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500),
                     ),
                   ),
                   GestureDetector(
@@ -564,8 +602,7 @@ class _ChatPageState extends State<ChatPage> {
             isRecording: _isRecording,
             onChanged: _onTypingChanged,
             onSend: _sendMessage,
-            onAttach: () =>
-                setState(() => _showAttachMenu = !_showAttachMenu),
+            onAttach: () => setState(() => _showAttachMenu = !_showAttachMenu),
             onMicDown: _startRecording,
             onMicUp: _stopAndSendRecording,
             onEmojiTap: () {
@@ -629,8 +666,7 @@ class _DateDivider extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 14),
       child: Center(
         child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
           decoration: BoxDecoration(
             color: const Color(0xFFF5F5F5),
             borderRadius: BorderRadius.circular(12),
@@ -861,7 +897,8 @@ class _InputBar extends StatelessWidget {
                 maxLines: 4,
                 minLines: 1,
                 textCapitalization: TextCapitalization.sentences,
-                style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
+                style:
+                    TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: 'Message...',
                   hintStyle: TextStyle(
@@ -884,13 +921,15 @@ class _InputBar extends StatelessWidget {
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey[100],
+                  fillColor:
+                      isDark ? const Color(0xFF2C2C2C) : Colors.grey[100],
                 ),
                 onSubmitted: (_) => onSend(),
               ),
             ),
             IconButton(
-              icon: Icon(Icons.add, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+              icon: Icon(Icons.add,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
               onPressed: onAttach,
             ),
             ValueListenableBuilder<TextEditingValue>(
@@ -928,9 +967,8 @@ class _InputBar extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: isRecording
-                            ? Colors.red
-                            : const Color(0xFF0EA5E9),
+                        color:
+                            isRecording ? Colors.red : const Color(0xFF0EA5E9),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(

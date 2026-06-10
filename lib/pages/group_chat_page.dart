@@ -6,6 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:record/record.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:flutter/foundation.dart' hide Category;
+import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/group_model.dart';
 import '../models/message_model.dart';
 import '../models/user_model.dart';
@@ -49,7 +52,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
 
   Future<void> _loadMembers() async {
     for (String uid in widget.initialGroup.members) {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
       if (doc.exists && mounted) {
         setState(() {
           _membersMap[uid] = UserModel.fromMap(doc.data()!);
@@ -166,19 +170,43 @@ class _GroupChatPageState extends State<GroupChatPage> {
 
   Future<void> _startRecording() async {
     try {
+      if (!kIsWeb && Platform.isAndroid) {
+        final status = await Permission.microphone.request();
+        if (status != PermissionStatus.granted) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Izin mikrofon diperlukan')),
+            );
+          }
+          return;
+        }
+      }
+
       if (await _recorder.hasPermission()) {
+        String path = '';
+        if (!kIsWeb && Platform.isAndroid) {
+          final dir = await getTemporaryDirectory();
+          path =
+              '${dir.path}/group_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+        }
+
         await _recorder.start(
           const RecordConfig(
-            encoder: AudioEncoder.opus,
+            encoder: AudioEncoder.aacLc,
             numChannels: 1,
             sampleRate: 16000,
           ),
-          path: '',
+          path: path,
         );
         setState(() => _isRecording = true);
       }
     } catch (e) {
       debugPrint('Recording error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memulai rekaman: $e')),
+        );
+      }
     }
   }
 
@@ -199,7 +227,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
         groupId: widget.initialGroup.id,
         senderId: widget.currentUid,
         bytes: bytes,
-        fileName: 'group_voice_$timestamp.opus',
+        fileName: 'group_voice_$timestamp.m4a',
       );
       setState(() => _sending = false);
       _scrollToBottom();
@@ -209,6 +237,11 @@ class _GroupChatPageState extends State<GroupChatPage> {
         _sending = false;
       });
       debugPrint('Stop recording error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengirim rekaman: $e')),
+        );
+      }
     }
   }
 
@@ -222,7 +255,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
     final text = _messageController.text;
     final selection = _messageController.selection;
     final start = selection.baseOffset < 0 ? text.length : selection.baseOffset;
-    final newText = text.substring(0, start) + emoji.emoji + text.substring(start);
+    final newText =
+        text.substring(0, start) + emoji.emoji + text.substring(start);
     _messageController.text = newText;
     _messageController.selection = TextSelection.collapsed(
       offset: start + emoji.emoji.length,
@@ -292,7 +326,10 @@ class _GroupChatPageState extends State<GroupChatPage> {
                           '${group.members.length} anggota',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.5),
                           ),
                         ),
                       ],
@@ -313,7 +350,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(
-                    child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
+                    child: CircularProgressIndicator(
+                        color: Theme.of(context).colorScheme.primary),
                   );
                 }
                 final messages = snapshot.data ?? [];
@@ -346,7 +384,10 @@ class _GroupChatPageState extends State<GroupChatPage> {
                         Text(
                           'Mulai obrolan grup',
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.4),
                             fontSize: 14,
                           ),
                         ),
@@ -355,11 +396,12 @@ class _GroupChatPageState extends State<GroupChatPage> {
                   );
                 }
                 final reversedMessages = messages.reversed.toList();
-                
+
                 return ListView.builder(
                   controller: _scrollController,
                   reverse: true,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   itemCount: reversedMessages.length,
                   itemBuilder: (context, i) {
                     final msg = reversedMessages[i];
@@ -367,27 +409,35 @@ class _GroupChatPageState extends State<GroupChatPage> {
                     final showDate = i == reversedMessages.length - 1 ||
                         reversedMessages[i].timestamp.toDate().day !=
                             reversedMessages[i + 1].timestamp.toDate().day;
-                    
-                    final senderName = _membersMap[msg.senderId]?.username ?? 'Anggota';
+
+                    final senderName =
+                        _membersMap[msg.senderId]?.username ?? 'Anggota';
 
                     if (msg.type == MessageType.system) {
-                      final isDarkSys = Theme.of(context).brightness == Brightness.dark;
+                      final isDarkSys =
+                          Theme.of(context).brightness == Brightness.dark;
                       return Column(
                         children: [
                           if (showDate) _DateDivider(msg.timestamp.toDate()),
                           Center(
                             child: Container(
                               margin: const EdgeInsets.symmetric(vertical: 12),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 6),
                               decoration: BoxDecoration(
-                                color: isDarkSys ? const Color(0xFF2C2C2C) : const Color(0xFFF3F4F6),
+                                color: isDarkSys
+                                    ? const Color(0xFF2C2C2C)
+                                    : const Color(0xFFF3F4F6),
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: Text(
                                 msg.message,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.5),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -398,18 +448,23 @@ class _GroupChatPageState extends State<GroupChatPage> {
                     }
 
                     return Column(
-                      crossAxisAlignment:
-                          isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                      crossAxisAlignment: isMe
+                          ? CrossAxisAlignment.end
+                          : CrossAxisAlignment.start,
                       children: [
                         if (showDate) _DateDivider(msg.timestamp.toDate()),
                         if (!isMe)
                           Padding(
-                            padding: const EdgeInsets.only(left: 12, bottom: 4, top: 8),
+                            padding: const EdgeInsets.only(
+                                left: 12, bottom: 4, top: 8),
                             child: Text(
                               senderName,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.5),
                               ),
                             ),
                           ),
@@ -444,7 +499,10 @@ class _GroupChatPageState extends State<GroupChatPage> {
                   const Expanded(
                     child: Text(
                       'Merekam... Lepas untuk kirim',
-                      style: TextStyle(color: Colors.red, fontSize: 13, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500),
                     ),
                   ),
                   GestureDetector(
@@ -461,8 +519,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
             sending: _sending,
             isRecording: _isRecording,
             onSend: _sendMessage,
-            onAttach: () =>
-                setState(() => _showAttachMenu = !_showAttachMenu),
+            onAttach: () => setState(() => _showAttachMenu = !_showAttachMenu),
             onMicDown: _startRecording,
             onMicUp: _stopAndSendRecording,
             onEmojiTap: () {
@@ -512,7 +569,9 @@ class _DateDivider extends StatelessWidget {
     final now = DateTime.now();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     String label;
-    if (date.year == now.year && date.month == now.month && date.day == now.day) {
+    if (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day) {
       label = 'Hari ini';
     } else if (date.year == now.year &&
         date.month == now.month &&
@@ -534,7 +593,10 @@ class _DateDivider extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 11,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.5),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -699,7 +761,8 @@ class _InputBar extends StatelessWidget {
                 maxLines: 4,
                 minLines: 1,
                 textCapitalization: TextCapitalization.sentences,
-                style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
+                style:
+                    TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: 'Message...',
                   hintStyle: TextStyle(
@@ -722,13 +785,15 @@ class _InputBar extends StatelessWidget {
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey[100],
+                  fillColor:
+                      isDark ? const Color(0xFF2C2C2C) : Colors.grey[100],
                 ),
                 onSubmitted: (_) => onSend(),
               ),
             ),
             IconButton(
-              icon: Icon(Icons.add, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+              icon: Icon(Icons.add,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
               onPressed: onAttach,
             ),
             ValueListenableBuilder<TextEditingValue>(
@@ -766,9 +831,8 @@ class _InputBar extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: isRecording
-                            ? Colors.red
-                            : const Color(0xFF0EA5E9),
+                        color:
+                            isRecording ? Colors.red : const Color(0xFF0EA5E9),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
