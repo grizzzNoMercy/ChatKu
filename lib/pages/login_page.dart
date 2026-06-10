@@ -59,8 +59,12 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final headingColor = isDark ? Colors.white : const Color(0xFF1E1E1E);
+    final subtitleColor = isDark ? Colors.white60 : const Color(0xFF999999);
+
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -87,24 +91,24 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                const Text(
+                Text(
                   'Selamat datang\nkembali',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF1E1E1E),
+                    color: headingColor,
                     height: 1.2,
                     letterSpacing: -0.5,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Masuk untuk melanjutkan chat',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
-                    color: Color(0xFF999999),
+                    color: subtitleColor,
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -112,11 +116,11 @@ class _LoginPageState extends State<LoginPage> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Email',
-                    hintStyle: TextStyle(color: Color(0xFF999999)),
+                    hintStyle: TextStyle(color: subtitleColor),
                     prefixIcon: Icon(Icons.mail_outline_rounded,
-                        size: 20, color: Color(0xFF999999)),
+                        size: 20, color: subtitleColor),
                   ),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Email wajib diisi';
@@ -131,16 +135,16 @@ class _LoginPageState extends State<LoginPage> {
                   obscureText: _obscure,
                   decoration: InputDecoration(
                     hintText: 'Password',
-                    hintStyle: const TextStyle(color: Color(0xFF999999)),
-                    prefixIcon: const Icon(Icons.lock_outline_rounded,
-                        size: 20, color: Color(0xFF999999)),
+                    hintStyle: TextStyle(color: subtitleColor),
+                    prefixIcon: Icon(Icons.lock_outline_rounded,
+                        size: 20, color: subtitleColor),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscure
                             ? Icons.visibility_off_outlined
                             : Icons.visibility_outlined,
                         size: 20,
-                        color: const Color(0xFF999999),
+                        color: subtitleColor,
                       ),
                       onPressed: () => setState(() => _obscure = !_obscure),
                     ),
@@ -175,9 +179,9 @@ class _LoginPageState extends State<LoginPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
+                    Text(
                       'Belum punya akun? ',
-                      style: TextStyle(color: Color(0xFF999999)),
+                      style: TextStyle(color: subtitleColor),
                     ),
                     GestureDetector(
                       onTap: () {

@@ -84,8 +84,12 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final headingColor = isDark ? Colors.white : const Color(0xFF1E1E1E);
+    final subtitleColor = isDark ? Colors.white60 : const Color(0xFF999999);
+
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -103,10 +107,10 @@ class _RegisterPageState extends State<RegisterPage> {
                       children: [
                         CircleAvatar(
                           radius: 40,
-                          backgroundColor: const Color(0xFFE5E5E5),
+                          backgroundColor: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE5E5E5),
                           backgroundImage: _photoBytes != null ? MemoryImage(_photoBytes!) : null,
                           child: _photoBytes == null
-                              ? const Icon(Icons.person_outline_rounded, size: 40, color: Color(0xFF999999))
+                              ? Icon(Icons.person_outline_rounded, size: 40, color: subtitleColor)
                               : null,
                         ),
                         Positioned(
@@ -126,35 +130,35 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 const SizedBox(height: 28),
-                const Text(
+                Text(
                   'Buat Akun Baru',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF1E1E1E),
+                    color: headingColor,
                     height: 1.2,
                     letterSpacing: -0.5,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Daftar untuk memulai chat',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
-                    color: Color(0xFF999999),
+                    color: subtitleColor,
                   ),
                 ),
                 const SizedBox(height: 36),
                 // Nama Lengkap
                 TextFormField(
                   controller: _usernameController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Nama Lengkap',
-                    hintStyle: TextStyle(color: Color(0xFF999999)),
+                    hintStyle: TextStyle(color: subtitleColor),
                     prefixIcon: Icon(Icons.person_outline_rounded,
-                        size: 20, color: Color(0xFF999999)),
+                        size: 20, color: subtitleColor),
                   ),
                   validator: (v) {
                     if (v == null || v.isEmpty) {
@@ -171,11 +175,11 @@ class _RegisterPageState extends State<RegisterPage> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Email',
-                    hintStyle: TextStyle(color: Color(0xFF999999)),
+                    hintStyle: TextStyle(color: subtitleColor),
                     prefixIcon: Icon(Icons.mail_outline_rounded,
-                        size: 20, color: Color(0xFF999999)),
+                        size: 20, color: subtitleColor),
                   ),
                   validator: (v) {
                     if (v == null || v.isEmpty) {
@@ -194,16 +198,16 @@ class _RegisterPageState extends State<RegisterPage> {
                   obscureText: _obscure,
                   decoration: InputDecoration(
                     hintText: 'Password',
-                    hintStyle: const TextStyle(color: Color(0xFF999999)),
-                    prefixIcon: const Icon(Icons.lock_outline_rounded,
-                        size: 20, color: Color(0xFF999999)),
+                    hintStyle: TextStyle(color: subtitleColor),
+                    prefixIcon: Icon(Icons.lock_outline_rounded,
+                        size: 20, color: subtitleColor),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscure
                             ? Icons.visibility_off_outlined
                             : Icons.visibility_outlined,
                         size: 20,
-                        color: const Color(0xFF999999),
+                        color: subtitleColor,
                       ),
                       onPressed: () => setState(() => _obscure = !_obscure),
                     ),
@@ -225,16 +229,16 @@ class _RegisterPageState extends State<RegisterPage> {
                   obscureText: _obscureConfirm,
                   decoration: InputDecoration(
                     hintText: 'Konfirmasi Password',
-                    hintStyle: const TextStyle(color: Color(0xFF999999)),
-                    prefixIcon: const Icon(Icons.lock_outline_rounded,
-                        size: 20, color: Color(0xFF999999)),
+                    hintStyle: TextStyle(color: subtitleColor),
+                    prefixIcon: Icon(Icons.lock_outline_rounded,
+                        size: 20, color: subtitleColor),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirm
                             ? Icons.visibility_off_outlined
                             : Icons.visibility_outlined,
                         size: 20,
-                        color: const Color(0xFF999999),
+                        color: subtitleColor,
                       ),
                       onPressed: () =>
                           setState(() => _obscureConfirm = !_obscureConfirm),
@@ -270,9 +274,9 @@ class _RegisterPageState extends State<RegisterPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
+                    Text(
                       'Sudah punya akun? ',
-                      style: TextStyle(color: Color(0xFF999999)),
+                      style: TextStyle(color: subtitleColor),
                     ),
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
