@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -45,6 +46,18 @@ class _HomePageState extends State<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _listenForIncomingCalls();
       _listenForNewMessages();
+      
+      // Temporary debugging code for FCM token
+      FirebaseMessaging.instance.getToken().then((token) {
+        if (token != null && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: SelectableText(token),
+              duration: const Duration(seconds: 60),
+            ),
+          );
+        }
+      });
     });
   }
 

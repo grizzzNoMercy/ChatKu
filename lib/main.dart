@@ -7,7 +7,17 @@ import 'services/notification_service.dart';
 import 'providers/settings_provider.dart';
 import 'pages/splash_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
+
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  debugPrint("Background message: ${message.notification?.title}");
+  await NotificationService.showLocalNotification(message);
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +32,9 @@ void main() async {
 
   // Initialize push notifications (FCM + local notifications)
   await NotificationService.initialize();
+
+  // Register background handler
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   runApp(const ChatKuApp());
 }

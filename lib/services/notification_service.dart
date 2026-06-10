@@ -3,13 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Top-level background message handler (must be a top-level function).
-@pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('[NotificationService] onBackgroundMessage received: ${message.messageId}');
-  // Show local notification for background messages
-  await NotificationService._showLocalNotification(message);
-}
+// Background handler moved to main.dart
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _localNotifications =
@@ -68,8 +62,7 @@ class NotificationService {
       debugPrint('[NotificationService] Android notification channel created: ${_channel.id}');
     }
 
-    // Register background handler
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    // Background handler registration moved to main.dart
 
     // Handle initial message (when app is launched from terminated state via notification)
     messaging.getInitialMessage().then((RemoteMessage? message) {
@@ -100,7 +93,7 @@ class NotificationService {
       debugPrint(
           '[NotificationService] onMessage (foreground) received: ${message.messageId}');
       debugPrint('[NotificationService] Notification title: ${message.notification?.title}, body: ${message.notification?.body}');
-      _showLocalNotification(message);
+      showLocalNotification(message);
     });
   }
 
@@ -139,7 +132,7 @@ class NotificationService {
   }
 
   /// Display a local notification from a RemoteMessage.
-  static Future<void> _showLocalNotification(RemoteMessage message) async {
+  static Future<void> showLocalNotification(RemoteMessage message) async {
     debugPrint('[NotificationService] Triggering local notification show()...');
     
     // Sometimes FCM messages send data but no notification object.
