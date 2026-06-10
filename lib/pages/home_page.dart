@@ -149,8 +149,32 @@ class _HomePageState extends State<HomePage> {
       if (snap.docs.isEmpty || !mounted) return;
       final doc = snap.docs.first;
       if (doc.id == _handlingCallId) return;
+
+      // Skip incoming call if already in an active call
+      if (CallService.currentState != CallState.idle) {
+        debugPrint('[HomePage] Skipping incoming call — already in a call');
+        return;
+      }
+
       _handlingCallId = doc.id;
       final data = doc.data() as Map<String, dynamic>;
+
+      // Skip stale calls (older than 60 seconds)
+      final timestamp = data['timestamp'] as Timestamp?;
+      if (timestamp != null) {
+        final age = DateTime.now().difference(timestamp.toDate());
+        if (age.inSeconds > 60) {
+          debugPrint('[HomePage] Skipping stale call (${age.inSeconds}s old)');
+          // Mark as ended to prevent future triggering
+          FirebaseFirestore.instance
+              .collection('calls')
+              .doc(doc.id)
+              .update({'status': 'ended'})
+              .catchError((_) {});
+          _handlingCallId = null;
+          return;
+        }
+      }
 
       Navigator.push(
         context,
@@ -178,9 +202,12 @@ class _HomePageState extends State<HomePage> {
 
   // ── FAB Popup Menu ────────────────────────────────────────────────────
   void _showNewChatMenu(String currentUid) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -195,13 +222,13 @@ class _HomePageState extends State<HomePage> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE5E5E5),
+                    color: isDark ? const Color(0xFF555555) : const Color(0xFFE5E5E5),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -209,7 +236,7 @@ class _HomePageState extends State<HomePage> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF111111),
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -967,30 +994,33 @@ class _MenuOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
       leading: Container(
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F5F5),
+          color: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF5F5F5),
           borderRadius: BorderRadius.circular(14),
         ),
-        child: Icon(icon, color: const Color(0xFF111111), size: 22),
+        child: Icon(icon, color: theme.colorScheme.onSurface, size: 22),
       ),
       title: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: 15,
-          color: Color(0xFF111111),
+          color: theme.colorScheme.onSurface,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
-          color: Color(0xFF999999),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
         ),
       ),
       onTap: onTap,

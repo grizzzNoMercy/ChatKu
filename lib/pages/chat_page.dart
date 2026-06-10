@@ -10,6 +10,7 @@ import '../models/user_model.dart';
 import '../models/message_model.dart';
 import '../services/auth_service.dart';
 import '../services/chat_service.dart';
+import '../services/call_service.dart';
 import '../services/presence_service.dart';
 import '../services/sound_service.dart';
 import '../utils/avatar_helper.dart';
@@ -259,6 +260,19 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _startCall(bool isVideo) async {
+    // Prevent starting a call if one is already active
+    if (CallService.currentState != CallState.idle) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Panggilan sedang berlangsung'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
     final authService = context.read<AuthService>();
     final currentUser = await authService.getCurrentUserData();
     if (!mounted || currentUser == null) return;

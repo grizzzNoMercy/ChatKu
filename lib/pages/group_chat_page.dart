@@ -280,19 +280,19 @@ class _GroupChatPageState extends State<GroupChatPage> {
                       children: [
                         Text(
                           group.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF111111),
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           '${group.members.length} anggota',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF999999),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                           ),
                         ),
                       ],
@@ -312,8 +312,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
               stream: GroupService.messagesStream(widget.initialGroup.id),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF111111)),
+                  return Center(
+                    child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
                   );
                 }
                 final messages = snapshot.data ?? [];
@@ -331,20 +331,22 @@ class _GroupChatPageState extends State<GroupChatPage> {
                 _previousMessageCount = messages.length;
 
                 if (messages.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           Icons.forum_outlined,
                           size: 56,
-                          color: Color(0xFFE5E5E5),
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xFF555555)
+                              : const Color(0xFFE5E5E5),
                         ),
-                        SizedBox(height: 14),
+                        const SizedBox(height: 14),
                         Text(
                           'Mulai obrolan grup',
                           style: TextStyle(
-                            color: Color(0xFF999999),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                             fontSize: 14,
                           ),
                         ),
@@ -369,6 +371,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
                     final senderName = _membersMap[msg.senderId]?.username ?? 'Anggota';
 
                     if (msg.type == MessageType.system) {
+                      final isDarkSys = Theme.of(context).brightness == Brightness.dark;
                       return Column(
                         children: [
                           if (showDate) _DateDivider(msg.timestamp.toDate()),
@@ -377,14 +380,14 @@ class _GroupChatPageState extends State<GroupChatPage> {
                               margin: const EdgeInsets.symmetric(vertical: 12),
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF3F4F6),
+                                color: isDarkSys ? const Color(0xFF2C2C2C) : const Color(0xFFF3F4F6),
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: Text(
                                 msg.message,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
-                                  color: Color(0xFF999999),
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -404,9 +407,9 @@ class _GroupChatPageState extends State<GroupChatPage> {
                             padding: const EdgeInsets.only(left: 12, bottom: 4, top: 8),
                             child: Text(
                               senderName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
-                                color: Color(0xFF999999),
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                               ),
                             ),
                           ),
@@ -431,7 +434,9 @@ class _GroupChatPageState extends State<GroupChatPage> {
           if (_isRecording)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              color: const Color(0xFFFFF3F3),
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF3D1F1F)
+                  : const Color(0xFFFFF3F3),
               child: Row(
                 children: [
                   const Icon(Icons.mic, color: Colors.red, size: 20),
@@ -505,6 +510,7 @@ class _DateDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     String label;
     if (date.year == now.year && date.month == now.month && date.day == now.day) {
       label = 'Hari ini';
@@ -521,14 +527,14 @@ class _DateDivider extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
           decoration: BoxDecoration(
-            color: const Color(0xFFF5F5F5),
+            color: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF5F5F5),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: Color(0xFF999999),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -551,12 +557,18 @@ class _AttachMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
         border: Border(
-          top: BorderSide(color: Color(0xFFF0F0F0), width: 0.5),
+          top: BorderSide(
+            color: isDark ? const Color(0xFF333333) : const Color(0xFFF0F0F0),
+            width: 0.5,
+          ),
         ),
       ),
       child: Row(
@@ -596,6 +608,9 @@ class _AttachItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -604,18 +619,18 @@ class _AttachItem extends StatelessWidget {
           Container(
             width: 52,
             height: 52,
-            decoration: const BoxDecoration(
-              color: Color(0xFFF5F5F5),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF5F5F5),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: const Color(0xFF111111), size: 24),
+            child: Icon(icon, color: theme.colorScheme.onSurface, size: 24),
           ),
           const SizedBox(height: 6),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: Color(0xFF999999),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -649,13 +664,19 @@ class _InputBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
           border: Border(
-            top: BorderSide(color: Color(0xFFF0F0F0), width: 0.5),
+            top: BorderSide(
+              color: isDark ? const Color(0xFF333333) : const Color(0xFFF0F0F0),
+              width: 0.5,
+            ),
           ),
         ),
         child: Row(
@@ -665,7 +686,7 @@ class _InputBar extends StatelessWidget {
                 showEmojiPicker
                     ? Icons.keyboard_rounded
                     : Icons.emoji_emotions_outlined,
-                color: Colors.grey,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               onPressed: onEmojiTap,
             ),
@@ -678,11 +699,12 @@ class _InputBar extends StatelessWidget {
                 maxLines: 4,
                 minLines: 1,
                 textCapitalization: TextCapitalization.sentences,
-                style: const TextStyle(fontSize: 14),
+                style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: 'Message...',
-                  hintStyle: const TextStyle(
-                      color: Color(0xFF999999), fontSize: 14),
+                  hintStyle: TextStyle(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      fontSize: 14),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 10,
@@ -700,13 +722,13 @@ class _InputBar extends StatelessWidget {
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: Colors.grey[100],
+                  fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey[100],
                 ),
                 onSubmitted: (_) => onSend(),
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.add, color: Colors.grey),
+              icon: Icon(Icons.add, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
               onPressed: onAttach,
             ),
             ValueListenableBuilder<TextEditingValue>(

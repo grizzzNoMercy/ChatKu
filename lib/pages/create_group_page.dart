@@ -160,25 +160,25 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                 Expanded(
                   child: TextField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Nama Grup',
-                      hintStyle: TextStyle(color: Color(0xFF999999)),
+                      hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       fillColor: Colors.transparent,
                     ),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF111111),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFF0F0F0)),
+          Divider(height: 1, color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF333333) : const Color(0xFFF0F0F0)),
           
           // Search contacts
           Padding(
@@ -187,11 +187,11 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
               onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
               decoration: InputDecoration(
                 hintText: 'Cari kontak...',
-                hintStyle: const TextStyle(color: Color(0xFF999999), fontSize: 14),
-                prefixIcon: const Icon(Icons.search_rounded,
-                    size: 20, color: Color(0xFF999999)),
+                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 14),
+                prefixIcon: Icon(Icons.search_rounded,
+                    size: 20, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
                 filled: true,
-                fillColor: const Color(0xFFF5F5F5),
+                fillColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2C2C2C) : const Color(0xFFF5F5F5),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(28),
                   borderSide: BorderSide.none,
@@ -207,8 +207,8 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
               stream: ContactService.contactsStream(currentUid),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF111111)),
+                  return Center(
+                    child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
                   );
                 }
 
@@ -220,10 +220,10 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         .toList();
 
                 if (filtered.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
                       'Tidak ada kontak ditemukan',
-                      style: TextStyle(color: Color(0xFF999999)),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
                     ),
                   );
                 }
@@ -256,9 +256,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                       ),
                       title: Text(
                         user.username,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF111111),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       trailing: Container(
@@ -267,12 +267,14 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: isSelected
-                              ? const Color(0xFF111111)
+                              ? const Color(0xFF0EA5E9)
                               : Colors.transparent,
                           border: Border.all(
                             color: isSelected
-                                ? const Color(0xFF111111)
-                                : const Color(0xFFE5E5E5),
+                                ? const Color(0xFF0EA5E9)
+                                : Theme.of(context).brightness == Brightness.dark
+                                    ? const Color(0xFF555555)
+                                    : const Color(0xFFE5E5E5),
                             width: 2,
                           ),
                         ),

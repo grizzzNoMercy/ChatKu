@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
 import 'services/presence_service.dart';
+import 'services/notification_service.dart';
 import 'providers/settings_provider.dart';
 import 'pages/splash_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -18,6 +19,9 @@ void main() async {
     url: 'https://gdlfkajdyrijasrbghvs.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkbGZrYWpkeXJpamFzcmJnaHZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDA0OTksImV4cCI6MjA5NjMxNjQ5OX0.BmOBwPB3E64XBp7WIWoUcAtvL76BZ4h6ygB3VLcmWbE',
   );
+
+  // Initialize push notifications (FCM + local notifications)
+  await NotificationService.initialize();
 
   runApp(const ChatKuApp());
 }

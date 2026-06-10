@@ -5,8 +5,28 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'call_log_service.dart';
 
+/// Represents the current state of the call subsystem.
+enum CallState { idle, ringing, inCall }
+
 class CallService {
   static final _firestore = FirebaseFirestore.instance;
+
+  // ── Global call-state guard (prevents overlapping calls) ──────────────
+  static CallState _currentState = CallState.idle;
+  static CallService? _activeInstance;
+
+  /// Current global call state.
+  static CallState get currentState => _currentState;
+
+  /// Terminate any active call before starting a new one.
+  static Future<void> terminateActiveCall() async {
+    if (_activeInstance != null) {
+      debugPrint('[CallService] Terminating existing active call');
+      await _activeInstance!.endCall();
+      _activeInstance = null;
+      _currentState = CallState.idle;
+    }
+  }
 
   static const _config = {
     'iceServers': [
@@ -86,6 +106,11 @@ class CallService {
     required String receiverName,
     required bool isVideo,
   }) async {
+    // Terminate any existing call before starting a new one
+    await terminateActiveCall();
+    _currentState = CallState.ringing;
+    _activeInstance = this;
+
     // Request runtime permissions first
     final granted = await requestPermissions(isVideo: isVideo);
     if (!granted) {
@@ -162,6 +187,7 @@ class CallService {
           _wasAnswered = true;
           _answerTime = DateTime.now();
           _receiverPhotoUrl = data['receiverPhotoUrl'] as String? ?? '';
+          _currentState = CallState.inCall;
         }
         final answer = RTCSessionDescription(
           data['answer']['sdp'],
@@ -205,6 +231,11 @@ class CallService {
     String receiverName = '',
     String receiverPhotoUrl = '',
   }) async {
+    // Terminate any existing call before answering a new one
+    await terminateActiveCall();
+    _currentState = CallState.inCall;
+    _activeInstance = this;
+
     // Request runtime permissions first
     final granted = await requestPermissions(isVideo: isVideo);
     if (!granted) {
@@ -382,5 +413,10 @@ class CallService {
     _pc = null;
     _localStream = null;
     _currentCallId = null;
+    // Reset global call state
+    if (_activeInstance == this) {
+      _activeInstance = null;
+      _currentState = CallState.idle;
+    }
   }
 }

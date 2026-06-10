@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../services/presence_service.dart';
+import '../services/notification_service.dart';
 import 'home_page.dart';
 import 'login_page.dart';
 
@@ -57,6 +58,11 @@ class _SplashPageState extends State<SplashPage>
           {'online': true, 'lastSeen': Timestamp.now()}).catchError((_) {});
       if (mounted) {
         context.read<PresenceService>().init();
+
+        // Save FCM token and set up foreground notifications
+        NotificationService.saveTokenToFirestore(user.uid);
+        NotificationService.setupForegroundListener();
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const HomePage()),

@@ -41,6 +41,9 @@ class _IncomingCallPageState extends State<IncomingCallPage>
     // Play ringtone when incoming call page opens
     SoundService.instance.playRingtone();
 
+    // Validate call status immediately (ghost call check)
+    _validateCallStatus();
+
     // Listen to call status changes
     _callSubscription = FirebaseFirestore.instance
         .collection('calls')
@@ -60,6 +63,51 @@ class _IncomingCallPageState extends State<IncomingCallPage>
         }
       }
     });
+  }
+
+  /// Check if the call is still valid (not already ended or stale).
+  Future<void> _validateCallStatus() async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('calls')
+          .doc(widget.callId)
+          .get();
+
+      if (!doc.exists) {
+        if (mounted) _closeIncomingCall();
+        return;
+      }
+
+      final data = doc.data();
+      if (data == null) {
+        if (mounted) _closeIncomingCall();
+        return;
+      }
+
+      final status = data['status'] as String?;
+      if (status != 'ringing') {
+        debugPrint('[IncomingCallPage] Call already $status — dismissing');
+        if (mounted) _closeIncomingCall();
+        return;
+      }
+
+      // Check if call is stale (older than 60 seconds)
+      final timestamp = data['timestamp'] as Timestamp?;
+      if (timestamp != null) {
+        final age = DateTime.now().difference(timestamp.toDate());
+        if (age.inSeconds > 60) {
+          debugPrint('[IncomingCallPage] Call is stale (${age.inSeconds}s) — dismissing');
+          // Mark as ended so it doesn't show up again
+          await FirebaseFirestore.instance
+              .collection('calls')
+              .doc(widget.callId)
+              .update({'status': 'ended'});
+          if (mounted) _closeIncomingCall();
+        }
+      }
+    } catch (e) {
+      debugPrint('[IncomingCallPage] Error validating call: $e');
+    }
   }
 
   void _closeIncomingCall() {

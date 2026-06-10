@@ -58,7 +58,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -116,20 +116,23 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        surfaceTintColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111111)),
+          icon: Icon(Icons.arrow_back_rounded, color: theme.colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Detail Grup',
           style: TextStyle(
-            color: Color(0xFF111111),
+            color: theme.colorScheme.onSurface,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
@@ -162,18 +165,18 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
           const SizedBox(height: 16),
           Text(
             widget.group.name,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF111111),
+              color: theme.colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             '${widget.group.members.length} anggota',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: Color(0xFF999999),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 32),
@@ -182,12 +185,12 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Anggota',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF111111),
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
                 TextButton.icon(
@@ -236,14 +239,14 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                         ),
                         title: Text(
                           member.uid == widget.currentUid ? 'Anda' : member.username,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF111111),
+                            color: theme.colorScheme.onSurface,
                           ),
                         ),
                         subtitle: Text(
                           member.email,
-                          style: const TextStyle(color: Color(0xFF999999)),
+                          style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                         ),
                       );
                     },
@@ -348,6 +351,9 @@ class _AddMemberModalState extends State<_AddMemberModal> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.7,
       padding: const EdgeInsets.only(top: 16),
@@ -357,17 +363,17 @@ class _AddMemberModalState extends State<_AddMemberModal> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: const Color(0xFFE5E5E5),
+              color: isDark ? const Color(0xFF555555) : const Color(0xFFE5E5E5),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Tambah Anggota',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF111111),
+              color: theme.colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
@@ -409,9 +415,9 @@ class _AddMemberModalState extends State<_AddMemberModal> {
                             ),
                             title: Text(
                               user.username,
-                              style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF111111)),
+                              style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
                             ),
-                            subtitle: Text(user.email, style: const TextStyle(color: Color(0xFF999999))),
+                            subtitle: Text(user.email, style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
                             activeColor: const Color(0xFF0EA5E9),
                           );
                         },
