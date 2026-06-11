@@ -46,18 +46,6 @@ class _HomePageState extends State<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _listenForIncomingCalls();
       _listenForNewMessages();
-      
-      // Temporary debugging code for FCM token
-      FirebaseMessaging.instance.getToken().then((token) {
-        if (token != null && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: SelectableText(token),
-              duration: const Duration(seconds: 60),
-            ),
-          );
-        }
-      });
     });
   }
 
